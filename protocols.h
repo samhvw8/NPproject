@@ -5,6 +5,8 @@
 #ifndef NPROGRAM_PROTOCOLS_H
 #define NPROGRAM_PROTOCOLS_H
 
+#include "chess.h"
+
 typedef enum mode_e {
     JOIN,
     MOVE,
@@ -15,11 +17,9 @@ typedef enum mode_e {
 typedef struct protocols_s {
     Mode mode;
 
-    unsigned int xf : 3;
-    unsigned int yf : 3;
+    Loc from;
+    Loc to;
 
-    unsigned int xt : 3;
-    unsigned int yt : 3;
 } Protocols;
 
 
