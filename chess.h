@@ -1,28 +1,8 @@
 //
-// Created by Sam Hoang on 3/21/17.
+// Created by Sam Hoang on 3/23/17.
 //
 
-#ifndef NPROGRAM_CHESS_H
-#define NPROGRAM_CHESS_H
+#ifndef PROJECTNP_CHESS_H
+#define PROJECTNP_CHESS_H
 
-// location
-typedef struct loc_s {
-    unsigned int x : 3;
-    unsigned int y : 3;
-} Loc;
-
-
-typedef enum piecestype_e {
-
-    KING, QUEEN, ROOK, KNIGHT, BISHOP, PAWN
-
-} PieceType;
-
-typedef struct piece_s {
-    PieceType pieceType;
-    Loc currentLoc;
-} Piece;
-
-
-
-#endif //NPROGRAM_CHESS_H
+#endif //PROJECTNP_CHESS_H
