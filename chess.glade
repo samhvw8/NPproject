@@ -164,11 +164,13 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <signal name="clicked" handler="onBtnQuitClick" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
                 <property name="fill">True</property>
                 <property name="position">2</property>
+                <property name="secondary">True</property>
               </packing>
             </child>
           </object>
@@ -927,6 +929,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <signal name="clicked" handler="onBtnJoinRoomClicked" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -940,6 +943,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
+            <signal name="clicked" handler="onBtnQuitClick" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
