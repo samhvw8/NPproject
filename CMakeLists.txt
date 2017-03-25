@@ -6,7 +6,7 @@ set(CMAKE_CXX_FLAGS "-rdynamic")
 
 set(SOURCE_FILES
         main.c
-        chess.h protocol.h ui.h handle.c)
+        chess.h protocol.h ui.h handle.c ui.c chess.c handle.h)
 
 find_package(PkgConfig REQUIRED)
 

@@ -2,15 +2,16 @@
 // Created by Sam Hoang on 3/24/17.
 //
 
-#include "ui.h"
 #include "protocol.h"
+#include "handle.h"
+
 
 
 /**
  *  btn click quit
  * @param btn
  */
-G_MODULE_EXPORT void onBtnQuitClicked(GtkButton *btn) {
+G_MODULE_EXPORT void on_btnQuit_clicked(GtkButton *btn) {
     gtk_main_quit();
 }
 
@@ -26,8 +27,26 @@ G_MODULE_EXPORT void on_main_window_destroy(GtkWidget *main_window) {
  */
 
 
-G_MODULE_EXPORT void onBtnJoinRoomClicked(GtkButton *btn, AppData *appData) {
+G_MODULE_EXPORT void on_btnJoinRoom_clicked(GtkButton *btn, AppData *appData) {
 
     gtk_widget_show((GtkWidget *) appData->wJoinInfo);
-    gtk_widget_hide((GtkWidget* ) appData->wStart);
+    gtk_widget_hide((GtkWidget *) appData->wStart);
+}
+
+/*
+ *  wJoinInfo
+ */
+G_MODULE_EXPORT void on_btnCancel_clicked(GtkButton *btn, AppData *appData) {
+
+    gtk_widget_hide((GtkWidget *) appData->wJoinInfo);
+    gtk_widget_show((GtkWidget *) appData->wStart);
+}
+
+G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn, AppData *appData) {
+    gtk_widget_show((GtkWidget *) appData->wPlay);
+    gtk_widget_hide((GtkWidget *) appData->wJoinInfo);
+}
+
+G_MODULE_EXPORT void on_place_clicked(GtkButton *btn, AppData *appData) {
+
 }

@@ -70,3 +70,20 @@ PlaceLoc placeLoc[64] = {
         {{7, 6}, "76", "img76"},
         {{7, 7}, "77", "img77"},
 };
+GdkPixbuf *imgArr[13];
+void init_img() {
+    GError *error = NULL;
+    imgArr[BBISHOP]= gdk_pixbuf_new_from_file ("./img/Bbishop.png", &error);
+    imgArr[BPAWN] = gdk_pixbuf_new_from_file ("./img/Bpawn.png", &error);
+    imgArr[WBISTHOP] = gdk_pixbuf_new_from_file ("./img/Wbisthop.png", &error);
+    imgArr[WPAWN] = gdk_pixbuf_new_from_file ("./img/Wpawn.png", &error);
+    imgArr[SPACE] = gdk_pixbuf_new_from_file ("./img/space.png", &error);
+    imgArr[BKIGHT] = gdk_pixbuf_new_from_file ("./img/Bkight.png", &error);
+    imgArr[BQUEEN] = gdk_pixbuf_new_from_file ("./img/Bqueen.png", &error);
+    imgArr[WKIGHT] = gdk_pixbuf_new_from_file ("./img/Wkight.png", &error);
+    imgArr[WQUEEN] = gdk_pixbuf_new_from_file ("./img/Wqueen.png", &error);
+    imgArr[BKING] = gdk_pixbuf_new_from_file ("./img/Bking.png", &error);
+    imgArr[BROOK] = gdk_pixbuf_new_from_file ("./img/Brook.png", &error);
+    imgArr[WKING] = gdk_pixbuf_new_from_file ("./img/Wking.png", &error);
+    imgArr[WROCK] = gdk_pixbuf_new_from_file ("./img/Wrock.png", &error);
+}

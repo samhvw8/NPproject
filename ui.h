@@ -26,6 +26,7 @@ typedef struct placeLoc_s {
 typedef struct square_s {
     GtkButton *place;
     GtkImage *img;
+    Piece *p;
 } Square;
 
 struct appData_s {
@@ -74,5 +75,10 @@ typedef struct appData_s AppData;
 
 extern PlaceLoc placeLoc[64];
 
+typedef enum iconame_e {
+    BBISHOP, BPAWN, WBISTHOP, WPAWN, SPACE, BKIGHT, BQUEEN, WKIGHT, WQUEEN, BKING, BROOK, WKING, WROCK
+} ImgName;
 
+extern GdkPixbuf *imgArr[13];
+void init_img();
 #endif //PROJECTNP_UI_H

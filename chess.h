@@ -33,4 +33,6 @@ typedef struct piece_s {
     Status status;
 } Piece;
 
+extern Piece piece[32];
+void init_game();
 #endif //PROJECTNP_CHESS_H
