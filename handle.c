@@ -406,7 +406,7 @@ void king_act(int x, int y, AppData *appData) {
     int j = appData->curloc.y;
 
     if (x - i > 1 || y - j > 1) {
-        return;
+        goto end;
     }
 
 
@@ -427,7 +427,7 @@ void king_act(int x, int y, AppData *appData) {
             place_img_update(i, j, appData);
         }
     }
-
+    end:
     clear_all_effect(appData);
 
     appData->gameState = GAMENONE;
@@ -438,6 +438,106 @@ void queen_act(int x, int y, AppData *appData) {
     int i = appData->curloc.x;
     int j = appData->curloc.y;
 
+    int absX = (x - i > 0) ? x - i : i - x;
+    int absY = (y - j > 0) ? y - j : j - y;
+
+    if ( !( (absX == absY) || (x == i) || (j == y) )) {
+        goto end;
+    }
+
+    if (absX == absY) {
+        if (x - i > 0 && y - j > 0) {
+            int idx, idy;
+            for (idx = i + 1, idy = j + 1;
+                 idx < x && idy < y;
+                 idx++, idy++) {
+
+                if (appData->squareMap[idx][idy]->p != NULL) {
+                    goto end;
+                }
+            }
+        }
+
+
+        if (x - i < 0 && y - j < 0) {
+            int idx, idy;
+            for (idx = i - 1, idy = j - 1;
+                 idx > x && idy > y;
+                 idx--, idy--) {
+
+                if (appData->squareMap[idx][idy]->p != NULL) {
+                    goto end;
+                }
+            }
+        }
+
+        if (x - i > 0 && y - j < 0) {
+            int idx, idy;
+            for (idx = i + 1, idy = j - 1;
+                 idx < x && idy > y;
+                 idx++, idy--) {
+
+                if (appData->squareMap[idx][idy]->p != NULL) {
+                    goto end;
+                }
+            }
+        }
+
+        if (x - i < 0 && y - j > 0) {
+            int idx, idy;
+            for (idx = i - 1, idy = j + 1;
+                 idx > x && idy < y;
+                 idx--, idy++) {
+                if (appData->squareMap[idx][idy]->p != NULL) {
+                    goto end;
+                }
+            }
+        }
+    }
+
+    if (x == i) {
+        if (j != y) {
+            int idy;
+            if (y - j > 0) {
+
+                for (idy = j + 1; idy < y; idy++) {
+                    if (appData->squareMap[i][idy]->p != NULL) {
+                        printf("1!!\n");
+                        goto end;
+                    }
+                }
+            } else {
+
+                for (idy = j - 1; idy > y; idy--) {
+                    if (appData->squareMap[i][idy]->p != NULL) {
+                        printf("2!! %d - %d\n", i, idy);
+                        goto end;
+                    }
+                }
+            }
+        }
+    }
+
+    if (j == y) {
+        if (i != x) {
+            int idx;
+            if (x - i > 0) {
+                for (idx = i + 1; idx < x; idx++) {
+                    if (appData->squareMap[idx][j]->p != NULL) {
+                        goto end;
+                    }
+                }
+            } else {
+                for (idx = i - 1; idx > x; idx--) {
+                    if (appData->squareMap[idx][j]->p != NULL) {
+                        goto end;
+                    }
+                }
+            }
+        }
+    }
+
+
 
     if (appData->squareMap[x][y]->p == NULL) {
 
@@ -456,7 +556,7 @@ void queen_act(int x, int y, AppData *appData) {
             place_img_update(i, j, appData);
         }
     }
-
+    end:
     clear_all_effect(appData);
 
     appData->gameState = GAMENONE;
@@ -516,7 +616,6 @@ void bishop_act(int x, int y, AppData *appData) {
     }
 
     if (x - i < 0 && y - j > 0) {
-        printf("!!!!\n");
         int idx, idy;
         for (idx = i - 1, idy = j + 1;
              idx > x && idy < y;
@@ -556,7 +655,7 @@ void rook_act(int x, int y, AppData *appData) {
 
 
     if (i != x && j != y) {
-        return;
+        goto end;
     }
 
     if (i != x) {
@@ -633,7 +732,7 @@ void pawn_act(int x, int y, AppData *appData) {
     if (appData->squareMap[x][y]->p == NULL) {
         // space
         if (i != x) {
-            return;
+            goto end;
         }
 
         if ((y - j == 2 * direct)) {
@@ -642,7 +741,7 @@ void pawn_act(int x, int y, AppData *appData) {
         }
 
         if ((y - j != direct)) {
-            return;
+            goto end;
         }
         skip:
         appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
@@ -651,11 +750,11 @@ void pawn_act(int x, int y, AppData *appData) {
         place_img_update(i, j, appData);
     } else {
         if (!(i - x == 1 || i - x == -1)) {
-            return;
+            goto end;
         }
 
         if (y - j != direct) {
-            return;
+            goto end;
         }
         if (appData->squareMap[x][y]->p->team != appData->team) {
 
@@ -667,6 +766,7 @@ void pawn_act(int x, int y, AppData *appData) {
         }
     }
 
+    end:
     clear_all_effect(appData);
     appData->gameState = GAMENONE;
 
