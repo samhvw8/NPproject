@@ -7,8 +7,15 @@
 
 #include <gtk/gtk.h>
 #include "protocol.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <signal.h>
+#include <unistd.h>
 
-#define CHESS_SIZE 8
+#define LISTENQ 8 /*maximum number of client connections */
+
 
 /* Macros for obtaining objects from UI file */
 #define CH_GET_OBJECT(builder, name, type, data) \
@@ -39,9 +46,6 @@ struct appData_s {
     /* Windows */
     GtkWindow *wPlay;
     GtkWindow *wStart;
-    GtkWindow *wWait;
-
-
 
 
     /*
@@ -49,7 +53,7 @@ struct appData_s {
      */
 
     GtkDialog *wJoinInfo;
-
+    GtkDialog *wGameInfo;
     /*
      *  GtkWindow wStart
      */
@@ -76,10 +80,12 @@ struct appData_s {
 
 
     /*
-     *  GtkWindow WWait
+     * WGameInfo
+     *
      */
-    GtkButton *btnQuitWait;
-    GtkLabel *labelStatusWait;
+    GtkButton *btnCreate;
+    GtkButton *btnCancelGameInfo;
+    GtkEntry *entryPortGameInfo;
 
     // map
     Square *squareMap[8][8];
@@ -98,8 +104,8 @@ struct appData_s {
 
     // network
 
-    int socketfn;
-    int connected;
+    int socketfd;
+    struct sockaddr_in cliaddr, servaddr;
 };
 
 typedef struct appData_s AppData;
@@ -111,5 +117,7 @@ typedef enum iconame_e {
 } ImgName;
 
 extern GdkPixbuf *imgArr[13];
+
 void init_img();
+
 #endif //PROJECTNP_UI_H

@@ -38,9 +38,9 @@ int main(int argc, char **argv) {
 
     CH_GET_OBJECT(builder, wPlay, GTK_WINDOW, appData);
     CH_GET_OBJECT(builder, wStart, GTK_WINDOW, appData);
-    CH_GET_OBJECT(builder, wWait, GTK_WINDOW, appData);
 
     CH_GET_OBJECT(builder, wJoinInfo, GTK_DIALOG, appData);
+    CH_GET_OBJECT(builder, wGameInfo, GTK_DIALOG, appData);
 
     CH_GET_OBJECT(builder, btnCancel, GTK_BUTTON, appData);
     CH_GET_OBJECT(builder, btnCreateRoom, GTK_BUTTON, appData);
@@ -48,12 +48,13 @@ int main(int argc, char **argv) {
     CH_GET_OBJECT(builder, btnJoinRoom, GTK_BUTTON, appData);
     CH_GET_OBJECT(builder, btnResign, GTK_BUTTON, appData);
     CH_GET_OBJECT(builder, btnRestart, GTK_BUTTON, appData);
+    CH_GET_OBJECT(builder, btnCreate, GTK_BUTTON, appData);
 
     CH_GET_OBJECT(builder, entryIP, GTK_ENTRY, appData);
     CH_GET_OBJECT(builder, entryPort, GTK_ENTRY, appData);
+    CH_GET_OBJECT(builder, entryPortGameInfo, GTK_ENTRY, appData);
 
     CH_GET_OBJECT(builder, labelStatusPlay, GTK_LABEL, appData);
-    CH_GET_OBJECT(builder, labelStatusWait, GTK_LABEL, appData);
 
     int i;
 
@@ -138,7 +139,6 @@ int main(int argc, char **argv) {
 
     change_game_status(GAMENONE, appData);
 
-    appData->team = WHITE;
     appData->effectLocIndex = -1;
 
     /* Connect signals */
@@ -153,6 +153,8 @@ int main(int argc, char **argv) {
 
     /* Start main loop */
     gtk_main();
+
+    close(appData->socketfd);
 
     /* Free any allocated data */
     g_slice_free(AppData, appData);

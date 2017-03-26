@@ -21,6 +21,7 @@ G_MODULE_EXPORT void on_main_window_destroy(GtkWidget *main_window);
 
 G_MODULE_EXPORT void on_btnJoinRoom_clicked(GtkButton *btn, AppData *appData);
 
+G_MODULE_EXPORT void on_btnCreateRoom_clicked(GtkButton *btn, AppData *appData);
 /*
  *  wJoinInfo
  */
@@ -30,6 +31,13 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn, AppData *appData);
 
 G_MODULE_EXPORT void on_place_clicked(GtkButton *btn, AppData *appData);
 
+/*
+ *  wGameInfo
+ */
+
+G_MODULE_EXPORT void on_btnCancelGameInfo_clicked(GtkButton *btn, AppData *appData);
+
+G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn, AppData *appData);
 
 // Helper
 void king_move(int x, int y, AppData *appData);
@@ -64,6 +72,6 @@ void add_to_effect_array(int x, int y, gchar *style_name, AppData *appData);
 
 void clear_all_effect(AppData *appData);
 
-void change_game_status(GameState gameState,AppData *appData);
+void change_game_status(GameState gameState, AppData *appData);
 
 #endif //PROJECTNP_HANDLE_H

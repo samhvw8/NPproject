@@ -4,6 +4,8 @@
 
 #include "protocol.h"
 #include "handle.h"
+#include <stdlib.h>
+#include <arpa/inet.h>
 
 #define LOCATION_ACT(i, j) \
     if (LOCATION_VALIDATE(i, j)) {\
@@ -53,6 +55,14 @@ G_MODULE_EXPORT void on_btnJoinRoom_clicked(GtkButton *btn, AppData *appData) {
     gtk_widget_hide((GtkWidget *) appData->wStart);
 }
 
+
+G_MODULE_EXPORT void on_btnCreateRoom_clicked(GtkButton *btn, AppData *appData) {
+
+    gtk_widget_show((GtkWidget *) appData->wGameInfo);
+    gtk_widget_hide((GtkWidget *) appData->wStart);
+}
+
+
 /*
  *  wJoinInfo
  */
@@ -63,9 +73,105 @@ G_MODULE_EXPORT void on_btnCancel_clicked(GtkButton *btn, AppData *appData) {
 }
 
 G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn, AppData *appData) {
+    appData->team = BLACK;
+    const gchar *port = gtk_entry_get_text(appData->entryPort);
+    const gchar *ip = gtk_entry_get_text(appData->entryIP);
+
+    if ((appData->socketfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("Problem in creating the socket");
+        exit(2);
+    }
+
+    appData->servaddr.sin_family = AF_INET;
+    appData->servaddr.sin_addr.s_addr = inet_addr(ip);
+    appData->servaddr.sin_port = htons(atoi(port));
+
+
+    while (1) {
+        if (connect(appData->socketfd, (struct sockaddr *) &(appData->servaddr), sizeof((appData->servaddr))) < 0) {
+            perror("Problem in connecting to the server");
+            exit(1);
+        }
+        printf("connect to another player !");
+        Protocol aProtocol;
+        aProtocol.mode = JOIN;
+
+        send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+        ssize_t n = recv(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+        if (aProtocol.mode == ACK) {
+            break;
+        }
+
+        printf("connect failed !");
+    }
+    printf("connect success !");
+
     gtk_widget_show((GtkWidget *) appData->wPlay);
     gtk_widget_hide((GtkWidget *) appData->wJoinInfo);
 }
+
+
+/*
+ *  wGameInfo
+ */
+
+G_MODULE_EXPORT void on_btnCancelGameInfo_clicked(GtkButton *btn, AppData *appData) {
+    gtk_widget_show((GtkWidget *) appData->wStart);
+    gtk_widget_hide((GtkWidget *) appData->wGameInfo);
+}
+
+G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn, AppData *appData) {
+//     socket here
+
+    appData->team = WHITE;
+    const gchar *port = gtk_entry_get_text(appData->entryPortGameInfo);
+
+
+    int listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    appData->servaddr.sin_family = AF_INET;
+    appData->servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    appData->servaddr.sin_port = htons(atoi(port));
+
+
+    bind(listenfd, (struct sockaddr *) &(appData->servaddr), sizeof((appData->servaddr)));
+
+    listen(listenfd, LISTENQ);
+
+    socklen_t clilen = sizeof(appData->cliaddr);
+
+
+    while (1) {
+        printf("Wait Connect !\n");
+        appData->socketfd = accept(listenfd, (struct sockaddr *) &(appData->cliaddr), &clilen);
+
+        Protocol aProtocol;
+
+        ssize_t n = recv(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+
+        if (aProtocol.mode == JOIN) {
+            break;
+        }
+        aProtocol.mode = ERR;
+        send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+        printf("Wait JOIN !\n");
+    }
+
+    Protocol aProtocol;
+    aProtocol.mode = ACK;
+
+    send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+    printf("connect success !");
+    close(listenfd);
+
+    // socket here
+    gtk_widget_show((GtkWidget *) appData->wPlay);
+    gtk_widget_hide((GtkWidget *) appData->wGameInfo);
+}
+
+/*
+ *  wPlay
+ */
+
 
 G_MODULE_EXPORT void on_place_clicked(GtkButton *btn, AppData *appData) {
     if (appData->gameState == GAMEWAIT) {
