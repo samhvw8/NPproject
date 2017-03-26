@@ -823,7 +823,7 @@ void pawn_act(int x, int y, AppData *appData) {
     if (appData->squareMap[x][y]->p == NULL) {
         // space
         if (i != x) {
-            if (appData->squareMap[x][j]->p != NULL) {
+            if (appData->squareMap[x][j]->p != NULL && appData->squareMap[x][j]->p->team != appData->squareMap[i][j]->p->team) {
                 appData->squareMap[x][j]->p->status = DEAD;
                 appData->squareMap[x][j]->p = NULL;
                 place_img_update(x, j, appData);
@@ -855,7 +855,7 @@ void pawn_act(int x, int y, AppData *appData) {
         if (y - j != direct) {
             goto end;
         }
-        if (appData->squareMap[x][y]->p->team != appData->team) {
+        if (appData->squareMap[x][y]->p->team != appData->squareMap[i][j]->p->team) {
 
             appData->squareMap[x][y]->p->status = DEAD;
             appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
