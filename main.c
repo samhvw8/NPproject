@@ -2,7 +2,7 @@
 #include "handle.h"
 
 #define  UI_FILE "chess.glade"
-
+#define  CSS_FILE "myCSS.css"
 
 int main(int argc, char **argv) {
 
@@ -10,6 +10,7 @@ int main(int argc, char **argv) {
 
     GtkBuilder *builder;
     GError *error = NULL;
+    GtkCssProvider *cssProvider;
 
     /* Init GTK+ */
     gtk_init(&argc, &argv);
@@ -21,6 +22,15 @@ int main(int argc, char **argv) {
         g_free(error);
         return 1;
     }
+
+    cssProvider = gtk_css_provider_new();
+    gtk_css_provider_load_from_path(cssProvider, CSS_FILE, &error);
+
+
+    GdkDisplay *display = gdk_display_get_default();
+    GdkScreen *screen = gdk_display_get_default_screen(display);
+    gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(cssProvider),
+                                              GTK_STYLE_PROVIDER_PRIORITY_USER);
 
     /* Allocate data structure */
     appData = g_slice_new(AppData);
@@ -47,7 +57,9 @@ int main(int argc, char **argv) {
 
     int i;
 
-    for (i = 0; i < 64; i++) {
+    init_img();
+
+    for (i = 0; i < MAX_CHESS_PLACE_SIZE; i++) {
         int x = placeLoc[i].loc.x;
         int y = placeLoc[i].loc.y;
 
@@ -62,11 +74,12 @@ int main(int argc, char **argv) {
 
         appData->squareMap[x][y]->p = NULL;
         gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[SPACE]);
-        g_signal_connect (G_OBJECT(appData->squareMap[x][y]->place), "clicked", G_CALLBACK(on_place_clicked), NULL);
+        g_signal_connect (G_OBJECT(appData->squareMap[x][y]->place), "clicked", G_CALLBACK(on_place_clicked), appData);
+        gtk_style_context_add_class(gtk_widget_get_style_context((GtkWidget *) appData->squareMap[x][y]->place),
+                                    "place");
     }
 
     init_game();
-    init_img();
     for (i = 0; i < 32; i++) {
         int x = piece[i].currentLoc.x;
         int y = piece[i].currentLoc.y;
@@ -100,7 +113,7 @@ int main(int argc, char **argv) {
                 switch (piece[i].pieceType) {
 
                     case KING:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img,imgArr[WKING]);
+                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[WKING]);
                         break;
                     case QUEEN:
                         gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[WQUEEN]);
@@ -115,7 +128,7 @@ int main(int argc, char **argv) {
                         gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[WBISTHOP]);
                         break;
                     case PAWN:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img,imgArr[WPAWN]);
+                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[WPAWN]);
                         break;
                 }
                 break;
@@ -123,6 +136,9 @@ int main(int argc, char **argv) {
     }
 
 
+    appData->gameState = GAMENONE;
+    appData->team = WHITE;
+    appData->effectLocIndex = -1;
 
     /* Connect signals */
     gtk_builder_connect_signals(builder, appData);

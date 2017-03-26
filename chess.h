@@ -5,6 +5,13 @@
 #ifndef PROJECTNP_CHESS_H
 #define PROJECTNP_CHESS_H
 
+#define MAX_CHESS_PLACE_SIZE 64
+#define MAX_CHESS_SIDE_SIZE 8
+
+#define _VALIDATE(x) ((x < MAX_CHESS_SIDE_SIZE) && (x >= 0))
+#define LOCATION_VALIDATE(x, y) (_VALIDATE(x) && _VALIDATE(y))
+
+
 // location
 typedef struct loc_s {
     unsigned int x : 3;
@@ -12,11 +19,18 @@ typedef struct loc_s {
 } Loc;
 
 
+
 typedef enum piecestype_e {
 
     KING, QUEEN, ROOK, KNIGHT, BISHOP, PAWN
 
 } PieceType;
+
+typedef enum gamestate_e {
+    GAMEWAIT, // wait another player
+    GAMEACT, // wsit complete move
+    GAMENONE
+} GameState;
 
 typedef enum team_e {
     BLACK, WHITE

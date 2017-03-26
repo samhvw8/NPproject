@@ -795,7 +795,7 @@
                   <object class="GtkImage" id="img46">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="stock">gtk-go-forward</property>
+                    <property name="stock">gtk-missing-image</property>
                   </object>
                 </child>
               </object>
@@ -1047,7 +1047,7 @@
                   <object class="GtkImage" id="img50">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="resource">/Users/samhv/workspace/projectNP/img/Bking.png</property>
+                    <property name="stock">gtk-missing-image</property>
                   </object>
                 </child>
               </object>

@@ -17,6 +17,12 @@ data->name = type ( gtk_builder_get_object(builder, #name ))
 #define CH_GET_WIDGET(builder, name, data)                    \
 CH_GET_OBJECT( builder, name, GTK_WIDGET, data )
 
+typedef struct effectloc_s {
+    int x;
+    int y;
+    gchar *style_name;
+} EffectLoc;
+
 typedef struct placeLoc_s {
     Loc loc;
     char *placeId;
@@ -69,6 +75,17 @@ struct appData_s {
     Square *squareMap[8][8];
 
     /* Insert more widgets to use */
+
+    Loc curloc;
+    GameState gameState;
+    Team team;
+
+
+    // effect
+
+    EffectLoc effectLoc[MAX_CHESS_PLACE_SIZE];
+    int effectLocIndex;
+
 };
 
 typedef struct appData_s AppData;
