@@ -284,7 +284,42 @@ void queen_move(int x, int y, AppData *appData) {
 }
 
 void knight_move(int x, int y, AppData *appData) {
+    int i, j;
+    i = x + 1;
+    j = y + 2;
+    LOCATION_ACT(i, j);
 
+    i = x + 2;
+    j = y + 1;
+    LOCATION_ACT(i, j);
+
+    i = x + 2;
+    j = y + 1;
+    LOCATION_ACT(i, j);
+
+    i = x + 2;
+    j = y - 1;
+    LOCATION_ACT(i, j);
+
+    i = x + 1;
+    j = y - 2;
+    LOCATION_ACT(i, j);
+
+    i = x - 1;
+    j = y - 2;
+    LOCATION_ACT(i, j);
+
+    i = x - 2;
+    j = y - 1;
+    LOCATION_ACT(i, j);
+
+    i = x - 2;
+    j = y + 1;
+    LOCATION_ACT(i, j);
+
+    i = x - 1;
+    j = y + 2;
+    LOCATION_ACT(i, j);
 }
 
 void bishop_move(int x, int y, AppData *appData) {
@@ -441,7 +476,7 @@ void queen_act(int x, int y, AppData *appData) {
     int absX = (x - i > 0) ? x - i : i - x;
     int absY = (y - j > 0) ? y - j : j - y;
 
-    if ( !( (absX == absY) || (x == i) || (j == y) )) {
+    if (!((absX == absY) || (x == i) || (j == y))) {
         goto end;
     }
 
@@ -538,7 +573,6 @@ void queen_act(int x, int y, AppData *appData) {
     }
 
 
-
     if (appData->squareMap[x][y]->p == NULL) {
 
         appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
@@ -563,6 +597,41 @@ void queen_act(int x, int y, AppData *appData) {
 }
 
 void knight_act(int x, int y, AppData *appData) {
+    int i = appData->curloc.x;
+    int j = appData->curloc.y;
+
+    int absX = (x - i > 0) ? x - i : i - x;
+    int absY = (y - j > 0) ? y - j : j - y;
+
+    if (!((absX == 1 && absY == 2) || (absY == 1 && absX == 2))) {
+        goto end;
+    }
+
+    if (!((absX = absY * 2) || (absY = absX * 2))) {
+        goto end;
+    }
+
+
+    if (appData->squareMap[x][y]->p == NULL) {
+
+        appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
+        appData->squareMap[i][j]->p = NULL;
+        place_img_update(x, y, appData);
+        place_img_update(i, j, appData);
+    } else {
+
+        if (appData->squareMap[x][y]->p->team != appData->team) {
+
+            appData->squareMap[x][y]->p->status = DEAD;
+            appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
+            appData->squareMap[i][j]->p = NULL;
+            place_img_update(x, y, appData);
+            place_img_update(i, j, appData);
+        }
+    }
+    end:
+    clear_all_effect(appData);
+
     appData->gameState = GAMENONE;
 }
 
