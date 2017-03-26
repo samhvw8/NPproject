@@ -629,10 +629,6 @@ void knight_act(int x, int y, AppData *appData) {
         goto end;
     }
 
-    if (!((absX = absY * 2) || (absY = absX * 2))) {
-        goto end;
-    }
-
 
     if (appData->squareMap[x][y]->p == NULL) {
 
