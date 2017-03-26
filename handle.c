@@ -417,6 +417,17 @@ void pawn_move(int x, int y, AppData *appData) {
         add_to_effect_array(i, j, "enemy", appData);
     }
 
+
+    if (appData->squareMap[i][j - direct]->p != NULL) {
+        // // En passant
+        if (appData->squareMap[i][j - direct]->p->team != appData->team &&
+            appData->squareMap[i][j - direct]->p->pieceType == PAWN) {
+            high_light_place(i, j, "enemy", appData);
+            add_to_effect_array(i, j, "enemy", appData);
+        }
+
+    }
+
     i = x - 1;
     j = y + direct;
     if (!LOCATION_VALIDATE(i, j)) {
@@ -427,6 +438,17 @@ void pawn_move(int x, int y, AppData *appData) {
         high_light_place(i, j, "enemy", appData);
         add_to_effect_array(i, j, "enemy", appData);
     }
+
+    if (appData->squareMap[i][j - direct]->p != NULL) {
+        // En passant
+        if (appData->squareMap[i][j - direct]->p->team != appData->team &&
+            appData->squareMap[i][j - direct]->p->pieceType == PAWN) {
+            high_light_place(i, j, "enemy", appData);
+            add_to_effect_array(i, j, "enemy", appData);
+        }
+
+    }
+
 
 }
 
@@ -801,6 +823,14 @@ void pawn_act(int x, int y, AppData *appData) {
     if (appData->squareMap[x][y]->p == NULL) {
         // space
         if (i != x) {
+            if (appData->squareMap[x][j]->p != NULL) {
+                appData->squareMap[x][j]->p->status = DEAD;
+                appData->squareMap[x][j]->p = NULL;
+                place_img_update(x, j, appData);
+                goto skip;
+            }
+
+
             goto end;
         }
 
