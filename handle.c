@@ -90,7 +90,6 @@ G_MODULE_EXPORT void on_place_clicked(GtkButton *btn, AppData *appData) {
 
         if ((i == appData->curloc.x) && (j == appData->curloc.y)) {
             // cancel action
-            printf("cancel action !!\n");
             appData->gameState = GAMENONE;
             clear_all_effect(appData);
             return;
@@ -98,7 +97,6 @@ G_MODULE_EXPORT void on_place_clicked(GtkButton *btn, AppData *appData) {
 
 
         if (appData->squareMap[i][j]->p != NULL && appData->squareMap[i][j]->p->team == appData->team) {
-            printf("!cancel action !!\n");
             appData->gameState = GAMENONE;
             clear_all_effect(appData);
             return;
@@ -559,7 +557,6 @@ void queen_act(int x, int y, AppData *appData) {
 
                 for (idy = j + 1; idy < y; idy++) {
                     if (appData->squareMap[i][idy]->p != NULL) {
-                        printf("1!!\n");
                         goto end;
                     }
                 }
@@ -567,7 +564,6 @@ void queen_act(int x, int y, AppData *appData) {
 
                 for (idy = j - 1; idy > y; idy--) {
                     if (appData->squareMap[i][idy]->p != NULL) {
-                        printf("2!! %d - %d\n", i, idy);
                         goto end;
                     }
                 }
@@ -768,7 +764,6 @@ void rook_act(int x, int y, AppData *appData) {
 
             for (idy = j + 1; idy < y; idy++) {
                 if (appData->squareMap[i][idy]->p != NULL) {
-                    printf("1!!\n");
                     goto end;
                 }
             }
@@ -776,14 +771,12 @@ void rook_act(int x, int y, AppData *appData) {
 
             for (idy = j - 1; idy > y; idy--) {
                 if (appData->squareMap[i][idy]->p != NULL) {
-                    printf("2!! %d - %d\n", i, idy);
                     goto end;
                 }
             }
         }
     }
 
-    printf("!!\n");
 
     if (appData->squareMap[x][y]->p == NULL) {
 
