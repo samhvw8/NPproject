@@ -865,6 +865,16 @@ void pawn_act(int x, int y, AppData *appData) {
         }
     }
 
+    if (appData->squareMap[x][y]->p->team == WHITE && y == 7) {
+        appData->squareMap[x][y]->p->pieceType = QUEEN;
+        place_img_update(x, y, appData);
+    }
+
+    if (appData->squareMap[x][y]->p->team == BLACK && y == 0) {
+        appData->squareMap[x][y]->p->pieceType = QUEEN;
+        place_img_update(x, y, appData);
+    }
+
     end:
     clear_all_effect(appData);
     appData->gameState = GAMENONE;
