@@ -90,14 +90,14 @@ G_MODULE_EXPORT void on_place_clicked(GtkButton *btn, AppData *appData) {
 
         if ((i == appData->curloc.x) && (j == appData->curloc.y)) {
             // cancel action
-            appData->gameState = GAMENONE;
+            change_game_status(GAMENONE, appData);
             clear_all_effect(appData);
             return;
         }
 
 
         if (appData->squareMap[i][j]->p != NULL && appData->squareMap[i][j]->p->team == appData->team) {
-            appData->gameState = GAMENONE;
+            change_game_status(GAMENONE, appData);
             clear_all_effect(appData);
             return;
         }
@@ -171,7 +171,7 @@ G_MODULE_EXPORT void on_place_clicked(GtkButton *btn, AppData *appData) {
             pawn_move(i, j, appData);
             break;
     }
-    appData->gameState = GAMEACT;
+    change_game_status(GAMEACT, appData);
 }
 
 void king_move(int x, int y, AppData *appData) {
@@ -482,11 +482,9 @@ void king_act(int x, int y, AppData *appData) {
             place_img_update(i, j, appData);
         }
     }
+    change_game_status(GAMEWAIT, appData);
     end:
     clear_all_effect(appData);
-
-    appData->gameState = GAMENONE;
-
 }
 
 void queen_act(int x, int y, AppData *appData) {
@@ -608,10 +606,9 @@ void queen_act(int x, int y, AppData *appData) {
             place_img_update(i, j, appData);
         }
     }
+    change_game_status(GAMEWAIT, appData);
     end:
     clear_all_effect(appData);
-
-    appData->gameState = GAMENONE;
 }
 
 void knight_act(int x, int y, AppData *appData) {
@@ -643,10 +640,9 @@ void knight_act(int x, int y, AppData *appData) {
             place_img_update(i, j, appData);
         }
     }
+    change_game_status(GAMEWAIT, appData);
     end:
     clear_all_effect(appData);
-
-    appData->gameState = GAMENONE;
 }
 
 void bishop_act(int x, int y, AppData *appData) {
@@ -726,10 +722,10 @@ void bishop_act(int x, int y, AppData *appData) {
             place_img_update(i, j, appData);
         }
     }
+    change_game_status(GAMEWAIT, appData);
     end:
     clear_all_effect(appData);
 
-    appData->gameState = GAMENONE;
 }
 
 void rook_act(int x, int y, AppData *appData) {
@@ -795,12 +791,9 @@ void rook_act(int x, int y, AppData *appData) {
             place_img_update(i, j, appData);
         }
     }
-
+    change_game_status(GAMEWAIT, appData);
     end:
     clear_all_effect(appData);
-
-
-    appData->gameState = GAMENONE;
 
 
 }
@@ -812,7 +805,8 @@ void pawn_act(int x, int y, AppData *appData) {
     if (appData->squareMap[x][y]->p == NULL) {
         // space
         if (i != x) {
-            if (appData->squareMap[x][j]->p != NULL && appData->squareMap[x][j]->p->team != appData->squareMap[i][j]->p->team) {
+            if (appData->squareMap[x][j]->p != NULL &&
+                appData->squareMap[x][j]->p->team != appData->squareMap[i][j]->p->team) {
                 appData->squareMap[x][j]->p->status = DEAD;
                 appData->squareMap[x][j]->p = NULL;
                 place_img_update(x, j, appData);
@@ -863,10 +857,10 @@ void pawn_act(int x, int y, AppData *appData) {
         appData->squareMap[x][y]->p->pieceType = QUEEN;
         place_img_update(x, y, appData);
     }
-
+    change_game_status(GAMEWAIT, appData);
     end:
     clear_all_effect(appData);
-    appData->gameState = GAMENONE;
+
 
 }
 
@@ -948,4 +942,22 @@ void clear_all_effect(AppData *appData) {
 
     }
     appData->effectLocIndex = -1;
+}
+
+void change_game_status(GameState gameState, AppData *appData) {
+    switch (gameState) {
+
+        case GAMEWAIT:
+            gtk_label_set_text(appData->labelStatusPlay, "Wait Another Player !!");
+            appData->gameState = GAMEWAIT;
+            break;
+        case GAMEACT:
+            gtk_label_set_text(appData->labelStatusPlay, "Choose Location");
+            appData->gameState = GAMEACT;
+            break;
+        case GAMENONE:
+            gtk_label_set_text(appData->labelStatusPlay, "Choose Piece");
+            appData->gameState = GAMENONE;
+            break;
+    }
 }

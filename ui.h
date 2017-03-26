@@ -39,6 +39,10 @@ struct appData_s {
     /* Windows */
     GtkWindow *wPlay;
     GtkWindow *wStart;
+    GtkWindow *wWait;
+
+
+
 
     /*
      *  Dialog
@@ -52,7 +56,6 @@ struct appData_s {
 
     GtkButton *btnCreateRoom;
     GtkButton *btnJoinRoom;
-    GtkButton *btnQuit;
     /*
      *  GtkDialog wJoinInfo
      */
@@ -69,7 +72,14 @@ struct appData_s {
 
     GtkButton *btnRestart;
     GtkButton *btnResign;
-    GtkButton *btnQuit2;
+    GtkLabel *labelStatusPlay;
+
+
+    /*
+     *  GtkWindow WWait
+     */
+    GtkButton *btnQuitWait;
+    GtkLabel *labelStatusWait;
 
     // map
     Square *squareMap[8][8];
@@ -86,6 +96,10 @@ struct appData_s {
     EffectLoc effectLoc[MAX_CHESS_PLACE_SIZE];
     int effectLocIndex;
 
+    // network
+
+    int socketfn;
+    int connected;
 };
 
 typedef struct appData_s AppData;

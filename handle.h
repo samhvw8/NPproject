@@ -64,4 +64,6 @@ void add_to_effect_array(int x, int y, gchar *style_name, AppData *appData);
 
 void clear_all_effect(AppData *appData);
 
+void change_game_status(GameState gameState,AppData *appData);
+
 #endif //PROJECTNP_HANDLE_H
