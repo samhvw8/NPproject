@@ -217,6 +217,7 @@ void queen_move(int x, int y, AppData *appData) {
     int i, j;
     i = x;
 
+    // like rook
     for (j = y + 1; j < MAX_CHESS_SIDE_SIZE; j++) {
         LOCATION_ACT(i, j);
         if (appData->squareMap[i][j]->p != NULL) {
@@ -246,6 +247,39 @@ void queen_move(int x, int y, AppData *appData) {
         }
     }
 
+    // -- like bishop
+    for (i = x + 1, j = y + 1;
+         i < MAX_CHESS_SIDE_SIZE && j < MAX_CHESS_SIDE_SIZE;
+         i++, j++) {
+        LOCATION_ACT(i, j);
+        if (appData->squareMap[i][j]->p != NULL) {
+            break;
+        }
+    }
+
+    for (i = x - 1, j = y - 1; i >= 0 && j >= 0; i--, j--) {
+        LOCATION_ACT(i, j);
+        if (appData->squareMap[i][j]->p != NULL) {
+            break;
+        }
+    }
+
+    for (i = x + 1, j = y - 1; i < MAX_CHESS_SIDE_SIZE && j >= 0; i++, j--) {
+        LOCATION_ACT(i, j);
+        if (appData->squareMap[i][j]->p != NULL) {
+            break;
+        }
+    }
+
+    for (i = x - 1, j = y + 1;
+         i >= 0 && j < MAX_CHESS_SIDE_SIZE;
+         i--, j++) {
+        LOCATION_ACT(i, j);
+        if (appData->squareMap[i][j]->p != NULL) {
+            break;
+        }
+    }
+
 
 }
 
@@ -254,7 +288,38 @@ void knight_move(int x, int y, AppData *appData) {
 }
 
 void bishop_move(int x, int y, AppData *appData) {
+    int i, j;
+    for (i = x + 1, j = y + 1;
+         i < MAX_CHESS_SIDE_SIZE && j < MAX_CHESS_SIDE_SIZE;
+         i++, j++) {
+        LOCATION_ACT(i, j);
+        if (appData->squareMap[i][j]->p != NULL) {
+            break;
+        }
+    }
 
+    for (i = x - 1, j = y - 1; i >= 0 && j >= 0; i--, j--) {
+        LOCATION_ACT(i, j);
+        if (appData->squareMap[i][j]->p != NULL) {
+            break;
+        }
+    }
+
+    for (i = x + 1, j = y - 1; i < MAX_CHESS_SIDE_SIZE && j >= 0; i++, j--) {
+        LOCATION_ACT(i, j);
+        if (appData->squareMap[i][j]->p != NULL) {
+            break;
+        }
+    }
+
+    for (i = x - 1, j = y + 1;
+         i >= 0 && j < MAX_CHESS_SIDE_SIZE;
+         i--, j++) {
+        LOCATION_ACT(i, j);
+        if (appData->squareMap[i][j]->p != NULL) {
+            break;
+        }
+    }
 }
 
 void rook_move(int x, int y, AppData *appData) {
@@ -370,6 +435,30 @@ void king_act(int x, int y, AppData *appData) {
 }
 
 void queen_act(int x, int y, AppData *appData) {
+    int i = appData->curloc.x;
+    int j = appData->curloc.y;
+
+
+    if (appData->squareMap[x][y]->p == NULL) {
+
+        appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
+        appData->squareMap[i][j]->p = NULL;
+        place_img_update(x, y, appData);
+        place_img_update(i, j, appData);
+    } else {
+
+        if (appData->squareMap[x][y]->p->team != appData->team) {
+
+            appData->squareMap[x][y]->p->status = DEAD;
+            appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
+            appData->squareMap[i][j]->p = NULL;
+            place_img_update(x, y, appData);
+            place_img_update(i, j, appData);
+        }
+    }
+
+    clear_all_effect(appData);
+
     appData->gameState = GAMENONE;
 }
 
@@ -378,6 +467,86 @@ void knight_act(int x, int y, AppData *appData) {
 }
 
 void bishop_act(int x, int y, AppData *appData) {
+    int i = appData->curloc.x;
+    int j = appData->curloc.y;
+
+
+    int absX = (x - i > 0) ? x - i : i - x;
+    int absY = (y - j > 0) ? y - j : j - y;
+
+    if (absX != absY) {
+        goto end;
+    }
+
+    if (x - i > 0 && y - j > 0) {
+        int idx, idy;
+        for (idx = i + 1, idy = j + 1;
+             idx < x && idy < y;
+             idx++, idy++) {
+
+            if (appData->squareMap[idx][idy]->p != NULL) {
+                goto end;
+            }
+        }
+    }
+
+
+    if (x - i < 0 && y - j < 0) {
+        int idx, idy;
+        for (idx = i - 1, idy = j - 1;
+             idx > x && idy > y;
+             idx--, idy--) {
+
+            if (appData->squareMap[idx][idy]->p != NULL) {
+                goto end;
+            }
+        }
+    }
+
+    if (x - i > 0 && y - j < 0) {
+        int idx, idy;
+        for (idx = i + 1, idy = j - 1;
+             idx < x && idy > y;
+             idx++, idy--) {
+
+            if (appData->squareMap[idx][idy]->p != NULL) {
+                goto end;
+            }
+        }
+    }
+
+    if (x - i < 0 && y - j > 0) {
+        printf("!!!!\n");
+        int idx, idy;
+        for (idx = i - 1, idy = j + 1;
+             idx > x && idy < y;
+             idx--, idy++) {
+            if (appData->squareMap[idx][idy]->p != NULL) {
+                goto end;
+            }
+        }
+    }
+
+    if (appData->squareMap[x][y]->p == NULL) {
+
+        appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
+        appData->squareMap[i][j]->p = NULL;
+        place_img_update(x, y, appData);
+        place_img_update(i, j, appData);
+    } else {
+
+        if (appData->squareMap[x][y]->p->team != appData->team) {
+
+            appData->squareMap[x][y]->p->status = DEAD;
+            appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
+            appData->squareMap[i][j]->p = NULL;
+            place_img_update(x, y, appData);
+            place_img_update(i, j, appData);
+        }
+    }
+    end:
+    clear_all_effect(appData);
+
     appData->gameState = GAMENONE;
 }
 
@@ -421,7 +590,7 @@ void rook_act(int x, int y, AppData *appData) {
 
             for (idy = j - 1; idy > y; idy--) {
                 if (appData->squareMap[i][idy]->p != NULL) {
-                    printf("2!! %d - %d\n",i , idy);
+                    printf("2!! %d - %d\n", i, idy);
                     goto end;
                 }
             }
