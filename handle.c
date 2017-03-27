@@ -1012,6 +1012,9 @@ void pawn_act(int x, int y) {
 
 void place_img_update(int x, int y) {
 
+
+    printf("!zzzz! %d %d\n",x ,y);
+
     Piece *p = appData->squareMap[x][y]->p;
 
     if (p == NULL) {
@@ -1118,14 +1121,12 @@ void send_to_player(int x, int y, int i, int j) {
     aProtocol.to.x = (unsigned int) i;
     aProtocol.to.y = (unsigned int) j;
 
-    printf("!!! %d %d %d %d\n", x, y, i, j);
-    printf("zzz %d %d %d %d\n", aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y);
-
 
     aProtocol.mode = MOVE;
 
     send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
 
+    printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y);
 }
 
 void another_player_move(int i, int j, int x, int y) {
@@ -1167,17 +1168,20 @@ void another_player_move(int i, int j, int x, int y) {
             goto end;
         }
     }
+    if (appData->squareMap[x][y]->p->pieceType == PAWN) {
 
+        if (appData->squareMap[x][y]->p->team == WHITE && y == 7) {
+            appData->squareMap[x][y]->p->pieceType = QUEEN;
+            place_img_update(x, y);
+        }
 
-    if (appData->squareMap[x][y]->p->team == WHITE && y == 7) {
-        appData->squareMap[x][y]->p->pieceType = QUEEN;
-        place_img_update(x, y);
+        if (appData->squareMap[x][y]->p->team == BLACK && y == 0) {
+            appData->squareMap[x][y]->p->pieceType = QUEEN;
+            place_img_update(x, y);
+        }
+
     }
 
-    if (appData->squareMap[x][y]->p->team == BLACK && y == 0) {
-        appData->squareMap[x][y]->p->pieceType = QUEEN;
-        place_img_update(x, y);
-    }
 
     Protocol aProtocol;
 
@@ -1193,12 +1197,104 @@ void rev_from_player(int signo) {
 
     recv(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
 
-    if (aProtocol.mode == MOVE) {
-        if (appData->squareMap[aProtocol.from.x][aProtocol.from.y]->p != NULL) {
-            another_player_move(aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y);
-            change_game_status(GAMENONE);
-        }
-    }
 
+    printf("rev %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y);
+
+
+    switch (aProtocol.mode) {
+
+        case JOIN:
+            break;
+        case MOVE:
+            if (appData->squareMap[aProtocol.from.x][aProtocol.from.y]->p != NULL) {
+//                another_player_move(aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y);
+
+                {
+                    int i = aProtocol.from.x;
+                    int j = aProtocol.from.y;
+                    int x = aProtocol.to.x;
+                    int y = aProtocol.to.y;
+                    if (appData->squareMap[x][y]->p == NULL) {
+
+                        if (appData->squareMap[i][j]->p->pieceType == PAWN) {
+                            if (appData->squareMap[x][j]->p != NULL &&
+                                appData->squareMap[x][j]->p->team != appData->squareMap[i][j]->p->team) {
+                                appData->squareMap[x][j]->p->status = DEAD;
+                                appData->squareMap[x][j]->p = NULL;
+                                place_img_update(x, j);
+                            }
+                        }
+
+
+                        appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
+                        appData->squareMap[i][j]->p = NULL;
+                        place_img_update(x, y);
+                        place_img_update(i, j);
+
+
+                    } else {
+
+                        if (appData->squareMap[x][y]->p->team != appData->squareMap[i][j]->p->team) {
+
+                            appData->squareMap[x][y]->p->status = DEAD;
+                            appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
+                            appData->squareMap[i][j]->p = NULL;
+                            place_img_update(x, y);
+                            place_img_update(i, j);
+
+
+                        } else {
+                            Protocol protocol;
+
+                            protocol.mode = ERR;
+
+                            send(appData->socketfd, &protocol, sizeof(protocol), 0);
+                            goto end;
+                        }
+                    }
+                    if (appData->squareMap[x][y]->p->pieceType == PAWN) {
+
+                        if (appData->squareMap[x][y]->p->team == WHITE && y == 7) {
+                            appData->squareMap[x][y]->p->pieceType = QUEEN;
+                            place_img_update(x, y);
+                        }
+
+                        if (appData->squareMap[x][y]->p->team == BLACK && y == 0) {
+                            appData->squareMap[x][y]->p->pieceType = QUEEN;
+                            place_img_update(x, y);
+                        }
+
+                    }
+
+
+                    Protocol protocol;
+
+                    aProtocol.mode = ACK;
+
+                    send(appData->socketfd, &protocol, sizeof(protocol), 0);
+
+                    end:;
+                }
+
+
+                change_game_status(GAMENONE);
+            }
+//            else {
+//                place_img_update(aProtocol.from.x, aProtocol.from.y);
+//                place_img_update(aProtocol.to.x, aProtocol.to.y);
+//            }
+            break;
+        case RESIGN:
+            break;
+        case RESTART:
+            break;
+        case ACK:
+            break;
+        case ERR:
+            break;
+
+        default:
+            break;
+    }
 
 }
