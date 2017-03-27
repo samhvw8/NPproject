@@ -1281,7 +1281,6 @@ void rev_from_player(int signo) {
 
                     Protocol protocol;
                     bzero(&protocol, sizeof(Protocol));
-                    bzero(&protocol, sizeof(Protocol));
                     aProtocol.mode = ACK;
 
                     send(appData->socketfd, &protocol, sizeof(protocol), 0);
