@@ -46,7 +46,9 @@ struct appData_s {
     /* Windows */
     GtkWindow *wPlay;
     GtkWindow *wStart;
-
+    GtkWindow *wRestart;
+    GtkWindow *wResign;
+    GtkWindow *wWait;
 
     /*
      *  Dialog
@@ -77,6 +79,7 @@ struct appData_s {
     GtkButton *btnRestart;
     GtkButton *btnResign;
     GtkLabel *labelStatusPlay;
+    GtkLabel *labelGameSide;
 
 
     /*
@@ -86,6 +89,23 @@ struct appData_s {
     GtkButton *btnCreate;
     GtkButton *btnCancelGameInfo;
     GtkEntry *entryPortGameInfo;
+
+    /*
+     * wResign
+     */
+    GtkLabel *labelStatusResign;
+    GtkButton *btnNewGame;
+
+
+    /*
+     * wRestart
+     */
+    GtkLabel *labelStatusRestart;
+
+    /*
+     * wWait
+     */
+    GtkLabel *labelStatusWait;
 
     // map
     Square *squareMap[8][8];

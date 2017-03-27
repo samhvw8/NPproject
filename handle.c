@@ -38,12 +38,14 @@
  * @param btn
  */
 G_MODULE_EXPORT void on_btnQuit_clicked(GtkButton *btn) {
+    send_to_player(QUIT, 0, 0, 0, 0);
     gtk_main_quit();
 }
 
 
 // click destroy
 G_MODULE_EXPORT void on_main_window_destroy(GtkWidget *main_window) {
+    send_to_player(QUIT, 0, 0, 0, 0);
     gtk_main_quit();
 }
 
@@ -66,6 +68,36 @@ G_MODULE_EXPORT void on_btnCreateRoom_clicked(GtkButton *btn) {
     gtk_widget_hide((GtkWidget *) appData->wStart);
 }
 
+/*
+ *  wPlay
+ */
+
+
+G_MODULE_EXPORT void on_btnRestart_clicked(GtkButton *btn) {
+    gtk_widget_show((GtkWidget *) appData->wRestart);
+    gtk_label_set_text(appData->labelStatusRestart, "You Lose, The game prepare for restarting !");
+    gtk_widget_hide((GtkWidget *) appData->wPlay);
+
+    gtk_main_iteration_do(FALSE);
+
+    send_to_player(RESTART, 0, 0, 0, 0);
+    new_game();
+    gtk_label_set_text(appData->labelStatusRestart, "The game will start after 3s");
+    gtk_main_iteration_do(FALSE);
+
+    sleep(3);
+    gtk_widget_hide((GtkWidget *) appData->wRestart);
+    gtk_widget_show((GtkWidget *) appData->wPlay);
+
+}
+
+G_MODULE_EXPORT void on_btnResign_clicked(GtkButton *btn) {
+    gtk_widget_show((GtkWidget *) appData->wResign);
+    gtk_widget_hide((GtkWidget *) appData->wPlay);
+    gtk_label_set_text(appData->labelStatusResign, "You Lose !");
+    gtk_main_iteration_do(FALSE);
+    send_to_player(RESIGN, 0, 0, 0, 0);
+}
 
 /*
  *  wJoinInfo
@@ -77,7 +109,16 @@ G_MODULE_EXPORT void on_btnCancel_clicked(GtkButton *btn) {
 }
 
 G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
-    appData->team = BLACK;
+
+    gtk_widget_hide((GtkWidget *) appData->wJoinInfo);
+    gtk_widget_show((GtkWidget *) appData->wWait);
+
+    gtk_label_set_text(appData->labelStatusWait, "Connecting to host player !");
+    gtk_main_iteration_do(FALSE);
+
+
+    change_team(BLACK);
+
     change_game_status(GAMEWAIT);
     const gchar *port = gtk_entry_get_text(appData->entryPort);
     const gchar *ip = gtk_entry_get_text(appData->entryIP);
@@ -106,9 +147,14 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
             break;
         }
 
+        gtk_label_set_text(appData->labelStatusWait, "connect failed ! Connect again !");
+        gtk_main_iteration_do(FALSE);
         printf("connect failed !");
     }
     printf("connect success !");
+
+    gtk_label_set_text(appData->labelStatusWait, "connect success !");
+    gtk_main_iteration_do(FALSE);
 
     if (fcntl(appData->socketfd, F_SETFL, O_NONBLOCK | O_ASYNC)) {
         printf("Error in setting socket to async, nonblock mode");
@@ -124,7 +170,7 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
     }
 
     gtk_widget_show((GtkWidget *) appData->wPlay);
-    gtk_widget_hide((GtkWidget *) appData->wJoinInfo);
+    gtk_widget_hide((GtkWidget *) appData->wWait);
 }
 
 
@@ -140,8 +186,17 @@ G_MODULE_EXPORT void on_btnCancelGameInfo_clicked(GtkButton *btn) {
 G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn) {
 //     socket here
 
-    appData->team = WHITE;
+    gtk_widget_hide((GtkWidget *) appData->wGameInfo);
+    gtk_widget_show((GtkWidget *) appData->wWait);
+
+    gtk_label_set_text(appData->labelStatusWait, "Wait guest player to connect !");
+
+
+    change_team(WHITE);
+
     const gchar *port = gtk_entry_get_text(appData->entryPortGameInfo);
+
+    gtk_main_iteration_do(TRUE);
 
 
     int listenfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -171,7 +226,8 @@ G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn) {
         bzero(&aProtocol, sizeof(Protocol));
         aProtocol.mode = ERR;
         send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-        printf("Wait JOIN !\n");
+        gtk_label_set_text(appData->labelStatusWait, "Wait guest player to join !");
+        gtk_main_iteration_do(FALSE);
     }
 
     Protocol aProtocol;
@@ -179,7 +235,8 @@ G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn) {
     aProtocol.mode = ACK;
 
     send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-    printf("connect success !");
+    gtk_label_set_text(appData->labelStatusWait, "Player connect success ! Wait Game Start !");
+    gtk_main_iteration_do(FALSE);
     close(listenfd);
 
     if (fcntl(appData->socketfd, F_SETFL, O_NONBLOCK | O_ASYNC))
@@ -194,8 +251,25 @@ G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn) {
 
     // socket here
     gtk_widget_show((GtkWidget *) appData->wPlay);
-    gtk_widget_hide((GtkWidget *) appData->wGameInfo);
+    gtk_widget_hide((GtkWidget *) appData->wWait);
 }
+
+/*
+ *  wResign
+ */
+//G_MODULE_EXPORT void on_btnNewGame_clicked(GtkButton *btn) {
+//    gtk_widget_show((GtkWidget *) appData->wWait);
+//    gtk_label_set_text(appData->labelStatusWait, "The game prepare for restarting !");
+//    gtk_widget_hide((GtkWidget *) appData->wResign);
+//
+//    gtk_main_iteration_do(FALSE);
+//    new_game();
+//    gtk_label_set_text(appData->labelStatusRestart, "The game will start after 3s");
+//    gtk_main_iteration_do(FALSE);
+//
+//    sleep(3);
+//    gtk_widget_show((GtkWidget *) appData->wPlay);
+//}
 
 /*
  *  wPlay
@@ -1161,6 +1235,19 @@ void send_to_player(Mode mode, int x, int y, int i, int j) {
             printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
                    aProtocol.to.y);
             break;
+        case QUIT:
+            aProtocol.mode = QUIT;
+            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+                   aProtocol.to.y);
+            break;
+        case END:
+            aProtocol.mode = END;
+            aProtocol.from.x = (unsigned int) x;
+            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+                   aProtocol.to.y);
+            break;
     }
 
 
@@ -1310,10 +1397,33 @@ void rev_from_player(int signo) {
 
             break;
         case RESIGN:
-            printf("Player disconnect !!");
-            gtk_main_quit();
+
+
+            gtk_widget_show((GtkWidget *) appData->wResign);
+            gtk_widget_hide((GtkWidget *) appData->wPlay);
+            gtk_label_set_text(appData->labelStatusResign, "You Win !");
+            gtk_main_iteration_do(FALSE);
+            send_to_player(ACK, 0, 0, 0, 0);
+
+
             break;
         case RESTART:
+
+            gtk_widget_show((GtkWidget *) appData->wRestart);
+            gtk_label_set_text(appData->labelStatusRestart, "You Win, The game prepare for restarting !");
+            gtk_widget_hide((GtkWidget *) appData->wPlay);
+
+            gtk_main_iteration_do(FALSE);
+
+            send_to_player(ACK, 0, 0, 0, 0);
+            new_game();
+            gtk_label_set_text(appData->labelStatusRestart, "The game will start after 3s");
+            gtk_main_iteration_do(FALSE);
+
+            sleep(3);
+            gtk_widget_hide((GtkWidget *) appData->wRestart);
+            gtk_widget_show((GtkWidget *) appData->wPlay);
+
             break;
         case ACK:
             break;
@@ -1322,6 +1432,83 @@ void rev_from_player(int signo) {
 
         default:
             break;
+        case QUIT:
+
+            gtk_widget_hide((GtkWidget *) appData->wPlay);
+            gtk_widget_show((GtkWidget *) appData->wStart);
+
+            gtk_widget_show((GtkWidget *) appData->wWait);
+            gtk_label_set_text(appData->labelStatusWait, "Another Player Quit ! Move to start Window!");
+
+
+            break;
+        case END:
+
+            gtk_widget_hide((GtkWidget *) appData->wPlay);
+            gtk_widget_show((GtkWidget *) appData->wStart);
+
+            gtk_widget_show((GtkWidget *) appData->wWait);
+            if (aProtocol.from.x == 0) {
+                gtk_label_set_text(appData->labelStatusWait, "YOU WIN");
+                gtk_main_iteration_do(FALSE);
+                send_to_player(ACK, 0, 0, 0, 0);
+            } else {
+                gtk_label_set_text(appData->labelStatusWait, "YOU LOSE");
+                gtk_main_iteration_do(FALSE);
+                send_to_player(ACK, 1, 0, 0, 0);
+            }
+
+            break;
     }
 
+}
+
+void change_team(Team team) {
+    appData->team = team;
+    switch (team) {
+
+        case BLACK:
+            gtk_label_set_text(appData->labelGameSide, "BLACK");
+            gtk_main_iteration_do(FALSE);
+            break;
+        case WHITE:
+            gtk_label_set_text(appData->labelGameSide, "WHITE");
+            gtk_main_iteration_do(FALSE);
+            break;
+    }
+
+}
+
+void check_game_end() {
+    int i;
+    int count = 0;
+    for (i = 0; i < (sizeof(piece) / sizeof((piece)[0])); i++) {
+        if (piece[i].pieceType != KING)
+            continue;
+
+        count++;
+
+        if (piece[i].status == DEAD) {
+            gtk_widget_hide((GtkWidget *) appData->wPlay);
+            gtk_widget_show((GtkWidget *) appData->wStart);
+
+            gtk_widget_show((GtkWidget *) appData->wWait);
+            if (piece[i].team == appData->team) {
+                gtk_label_set_text(appData->labelStatusWait, "YOU LOSE");
+                gtk_main_iteration_do(FALSE);
+                send_to_player(END, 0, 0, 0, 0);
+            } else {
+                gtk_label_set_text(appData->labelStatusWait, "YOU WIN");
+                gtk_main_iteration_do(FALSE);
+                send_to_player(END, 1, 0, 0, 0);
+            }
+
+
+        }
+
+
+        if (count == 2) {
+            break;
+        }
+    }
 }

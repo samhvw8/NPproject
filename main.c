@@ -39,6 +39,9 @@ int main(int argc, char **argv) {
 
     CH_GET_OBJECT(builder, wPlay, GTK_WINDOW, appData);
     CH_GET_OBJECT(builder, wStart, GTK_WINDOW, appData);
+    CH_GET_OBJECT(builder, wResign, GTK_WINDOW, appData);
+    CH_GET_OBJECT(builder, wRestart, GTK_WINDOW, appData);
+    CH_GET_OBJECT(builder, wWait, GTK_WINDOW, appData);
 
     CH_GET_OBJECT(builder, wJoinInfo, GTK_DIALOG, appData);
     CH_GET_OBJECT(builder, wGameInfo, GTK_DIALOG, appData);
@@ -56,6 +59,10 @@ int main(int argc, char **argv) {
     CH_GET_OBJECT(builder, entryPortGameInfo, GTK_ENTRY, appData);
 
     CH_GET_OBJECT(builder, labelStatusPlay, GTK_LABEL, appData);
+    CH_GET_OBJECT(builder, labelGameSide, GTK_LABEL, appData);
+    CH_GET_OBJECT(builder, labelStatusResign, GTK_LABEL, appData);
+    CH_GET_OBJECT(builder, labelStatusRestart, GTK_LABEL, appData);
+    CH_GET_OBJECT(builder, labelStatusWait, GTK_LABEL, appData);
 
     int i;
 
@@ -81,62 +88,10 @@ int main(int argc, char **argv) {
                                     "place");
     }
 
+
+
+
     init_game();
-    for (i = 0; i < 32; i++) {
-        int x = piece[i].currentLoc.x;
-        int y = piece[i].currentLoc.y;
-        appData->squareMap[x][y]->p = &piece[i];
-        switch (piece[i].team) {
-
-            case BLACK:
-                switch (piece[i].pieceType) {
-
-                    case KING:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[BKING]);
-                        break;
-                    case QUEEN:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[BQUEEN]);
-                        break;
-                    case ROOK:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[BROOK]);
-                        break;
-                    case KNIGHT:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[BKIGHT]);
-                        break;
-                    case BISHOP:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[BBISHOP]);
-                        break;
-                    case PAWN:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[BPAWN]);
-                        break;
-                }
-                break;
-            case WHITE:
-                switch (piece[i].pieceType) {
-
-                    case KING:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[WKING]);
-                        break;
-                    case QUEEN:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[WQUEEN]);
-                        break;
-                    case ROOK:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[WROCK]);
-                        break;
-                    case KNIGHT:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[WKIGHT]);
-                        break;
-                    case BISHOP:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[WBISTHOP]);
-                        break;
-                    case PAWN:
-                        gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[WPAWN]);
-                        break;
-                }
-                break;
-        }
-    }
-
 
     change_game_status(GAMENONE);
 

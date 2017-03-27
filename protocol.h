@@ -12,6 +12,8 @@ typedef enum mode_e {
     MOVE,
     RESIGN,
     RESTART,
+    QUIT,
+    END,
     ACK,
     ERR
 } Mode;

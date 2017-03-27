@@ -22,6 +22,18 @@ G_MODULE_EXPORT void on_main_window_destroy(GtkWidget *main_window);
 G_MODULE_EXPORT void on_btnJoinRoom_clicked(GtkButton *btn);
 
 G_MODULE_EXPORT void on_btnCreateRoom_clicked(GtkButton *btn);
+
+
+/*
+ *  wPlay
+ */
+
+
+G_MODULE_EXPORT void on_btnRestart_clicked(GtkButton *btn);
+
+G_MODULE_EXPORT void on_btnResign_clicked(GtkButton *btn);
+
+
 /*
  *  wJoinInfo
  */
@@ -29,7 +41,6 @@ G_MODULE_EXPORT void on_btnCancel_clicked(GtkButton *btn);
 
 G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn);
 
-G_MODULE_EXPORT void on_place_clicked(GtkButton *btn);
 
 /*
  *  wGameInfo
@@ -38,6 +49,17 @@ G_MODULE_EXPORT void on_place_clicked(GtkButton *btn);
 G_MODULE_EXPORT void on_btnCancelGameInfo_clicked(GtkButton *btn);
 
 G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn);
+
+/*
+ *  wResign
+ */
+//G_MODULE_EXPORT void on_btnNewGame_clicked(GtkButton *btn);
+
+
+/*
+ * wPlay
+ */
+G_MODULE_EXPORT void on_place_clicked(GtkButton *btn);
 
 // Helper
 void king_move(int x, int y);
@@ -79,4 +101,8 @@ void send_to_player(Mode mode,int x, int y, int i, int j);
 void another_player_move(int i, int j, int x, int y);
 
 void rev_from_player(int signo);
+
+void change_team(Team team);
+
+void check_game_end();
 #endif //PROJECTNP_HANDLE_H
