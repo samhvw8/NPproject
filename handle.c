@@ -1209,6 +1209,7 @@ void send_to_player(Mode mode, int x, int y, int i, int j) {
             send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
             printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
                    aProtocol.to.y);
+            check_game_end();
 
             break;
         case RESIGN:
