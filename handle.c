@@ -99,12 +99,9 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
         }
 
         printf("connect to another player !");
+        send_to_player(JOIN, 0, 0, 0, 0);
         Protocol aProtocol;
-        bzero(&aProtocol, sizeof(Protocol));
-        aProtocol.mode = JOIN;
-
-        send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-        ssize_t n = recv(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+        recv(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
         if (aProtocol.mode == ACK) {
             break;
         }
@@ -207,7 +204,6 @@ G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn) {
 
 G_MODULE_EXPORT void on_place_clicked(GtkButton *btn) {
     if (appData->gameState == GAMEWAIT) {
-        printf("GAMEWAIT\n");
         return;
     }
 
@@ -622,7 +618,7 @@ void king_act(int x, int y) {
     }
     change_game_status(GAMEWAIT);
 
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
+    send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
 
     end:
     clear_all_effect(appData);
@@ -750,7 +746,7 @@ void queen_act(int x, int y) {
 
     change_game_status(GAMEWAIT);
 
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
+    send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
 }
@@ -785,7 +781,7 @@ void knight_act(int x, int y) {
         }
     }
     change_game_status(GAMEWAIT);
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
+    send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
 }
@@ -868,7 +864,7 @@ void bishop_act(int x, int y) {
         }
     }
     change_game_status(GAMEWAIT);
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
+    send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
 
@@ -938,7 +934,7 @@ void rook_act(int x, int y) {
         }
     }
     change_game_status(GAMEWAIT);
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
+    send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
 
@@ -1006,7 +1002,7 @@ void pawn_act(int x, int y) {
     }
 
     change_game_status(GAMEWAIT);
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
+    send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
 
@@ -1015,8 +1011,6 @@ void pawn_act(int x, int y) {
 
 void place_img_update(int x, int y) {
 
-
-    printf("!zzzz! %d %d\n", x, y);
 
     Piece *p = appData->squareMap[x][y]->p;
 
@@ -1115,23 +1109,61 @@ void change_game_status(GameState gameState) {
     }
 }
 
-void send_to_player(int x, int y, int i, int j) {
+void send_to_player(Mode mode, int x, int y, int i, int j) {
     Protocol aProtocol;
     bzero(&aProtocol, sizeof(Protocol));
-    aProtocol.from.x = (unsigned int) x;
-    aProtocol.from.y = (unsigned int) y;
+
+    switch (mode) {
+
+        case JOIN:
+            aProtocol.mode = JOIN;
+            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+                   aProtocol.to.y);
+            break;
+        case MOVE:
+            aProtocol.from.x = (unsigned int) x;
+            aProtocol.from.y = (unsigned int) y;
 
 
-    aProtocol.to.x = (unsigned int) i;
-    aProtocol.to.y = (unsigned int) j;
+            aProtocol.to.x = (unsigned int) i;
+            aProtocol.to.y = (unsigned int) j;
 
 
-    aProtocol.mode = MOVE;
+            aProtocol.mode = MOVE;
 
-    send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+                   aProtocol.to.y);
 
-    printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
-           aProtocol.to.y);
+            break;
+        case RESIGN:
+            aProtocol.mode = RESIGN;
+            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+                   aProtocol.to.y);
+            break;
+        case RESTART:
+            aProtocol.mode = RESTART;
+            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+                   aProtocol.to.y);
+            break;
+        case ACK:
+            aProtocol.mode = ACK;
+            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+                   aProtocol.to.y);
+            break;
+        case ERR:
+            aProtocol.mode = ERR;
+            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+                   aProtocol.to.y);
+            break;
+    }
+
+
 }
 
 void another_player_move(int i, int j, int x, int y) {
@@ -1165,11 +1197,7 @@ void another_player_move(int i, int j, int x, int y) {
 
 
         } else {
-            Protocol aProtocol;
-            bzero(&aProtocol, sizeof(Protocol));
-            aProtocol.mode = ERR;
-
-            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            send_to_player(ERR, 0, 0, 0, 0);
             goto end;
         }
     }
@@ -1188,11 +1216,7 @@ void another_player_move(int i, int j, int x, int y) {
     }
 
 
-    Protocol aProtocol;
-    bzero(&aProtocol, sizeof(Protocol));
-    aProtocol.mode = ACK;
-
-    send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+    send_to_player(ACK, 0, 0, 0, 0);
 
     end:;
 }
@@ -1240,7 +1264,7 @@ void rev_from_player(int signo) {
                         appData->squareMap[i][j]->p = NULL;
                         place_img_update(x, y);
                         place_img_update(i, j);
-                        gtk_main_iteration_do (FALSE);
+                        gtk_main_iteration_do(FALSE);
 
                     } else {
 
@@ -1251,14 +1275,10 @@ void rev_from_player(int signo) {
                             appData->squareMap[i][j]->p = NULL;
                             place_img_update(x, y);
                             place_img_update(i, j);
-                            gtk_main_iteration_do (FALSE);
+                            gtk_main_iteration_do(FALSE);
 
                         } else {
-                            Protocol protocol;
-                            bzero(&protocol, sizeof(Protocol));
-                            protocol.mode = ERR;
-
-                            send(appData->socketfd, &protocol, sizeof(protocol), 0);
+                            send_to_player(ERR, 0, 0, 0, 0);
                             goto end;
                         }
                     }
@@ -1267,23 +1287,19 @@ void rev_from_player(int signo) {
                         if (appData->squareMap[x][y]->p->team == WHITE && y == 7) {
                             appData->squareMap[x][y]->p->pieceType = QUEEN;
                             place_img_update(x, y);
-                            gtk_main_iteration_do (FALSE);
+                            gtk_main_iteration_do(FALSE);
                         }
 
                         if (appData->squareMap[x][y]->p->team == BLACK && y == 0) {
                             appData->squareMap[x][y]->p->pieceType = QUEEN;
                             place_img_update(x, y);
-                            gtk_main_iteration_do (FALSE);
+                            gtk_main_iteration_do(FALSE);
                         }
 
                     }
 
 
-                    Protocol protocol;
-                    bzero(&protocol, sizeof(Protocol));
-                    aProtocol.mode = ACK;
-
-                    send(appData->socketfd, &protocol, sizeof(protocol), 0);
+                    send_to_player(ACK, 0, 0, 0, 0);
 
                     end:;
                 }
@@ -1291,10 +1307,7 @@ void rev_from_player(int signo) {
 
                 change_game_status(GAMENONE);
             }
-//            else {
-//                place_img_update(aProtocol.from.x, aProtocol.from.y);
-//                place_img_update(aProtocol.to.x, aProtocol.to.y);
-//            }
+
             break;
         case RESIGN:
             printf("Player disconnect !!");

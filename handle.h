@@ -74,7 +74,7 @@ void clear_all_effect(AppData *appData);
 
 void change_game_status(GameState gameState);
 
-void send_to_player(int x, int y, int i, int j);
+void send_to_player(Mode mode,int x, int y, int i, int j);
 
 void another_player_move(int i, int j, int x, int y);
 
