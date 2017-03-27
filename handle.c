@@ -6,25 +6,29 @@
 #include "handle.h"
 #include <stdlib.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <signal.h>
+
 
 #define LOCATION_ACT(i, j) \
     if (LOCATION_VALIDATE(i, j)) {\
         if (appData->squareMap[i][j]->p != NULL) {\
             if (appData->squareMap[i][j]->p->team != appData->team) {\
-                high_light_place(i, j, "enemy", appData);\
-                add_to_effect_array(i, j, "enemy", appData);\
+                high_light_place(i, j, "enemy");\
+                add_to_effect_array(i, j, "enemy");\
             }\
         } else {\
-            high_light_place(i, j, "space", appData);\
-            add_to_effect_array(i, j,"space", appData);\
+            high_light_place(i, j, "space");\
+            add_to_effect_array(i, j,"space");\
         }\
     }
 
 #define LOCATION_ACT_PAWN(i, j) \
     if (LOCATION_VALIDATE(i, j)) {\
         if (appData->squareMap[i][j]->p == NULL) {\
-            high_light_place(i, j, "space", appData);\
-            add_to_effect_array(i, j,"space", appData);\
+            high_light_place(i, j, "space");\
+            add_to_effect_array(i, j,"space");\
         }\
     }
 
@@ -49,14 +53,14 @@ G_MODULE_EXPORT void on_main_window_destroy(GtkWidget *main_window) {
  */
 
 
-G_MODULE_EXPORT void on_btnJoinRoom_clicked(GtkButton *btn, AppData *appData) {
+G_MODULE_EXPORT void on_btnJoinRoom_clicked(GtkButton *btn) {
 
     gtk_widget_show((GtkWidget *) appData->wJoinInfo);
     gtk_widget_hide((GtkWidget *) appData->wStart);
 }
 
 
-G_MODULE_EXPORT void on_btnCreateRoom_clicked(GtkButton *btn, AppData *appData) {
+G_MODULE_EXPORT void on_btnCreateRoom_clicked(GtkButton *btn) {
 
     gtk_widget_show((GtkWidget *) appData->wGameInfo);
     gtk_widget_hide((GtkWidget *) appData->wStart);
@@ -66,14 +70,15 @@ G_MODULE_EXPORT void on_btnCreateRoom_clicked(GtkButton *btn, AppData *appData) 
 /*
  *  wJoinInfo
  */
-G_MODULE_EXPORT void on_btnCancel_clicked(GtkButton *btn, AppData *appData) {
+G_MODULE_EXPORT void on_btnCancel_clicked(GtkButton *btn) {
 
     gtk_widget_hide((GtkWidget *) appData->wJoinInfo);
     gtk_widget_show((GtkWidget *) appData->wStart);
 }
 
-G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn, AppData *appData) {
+G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
     appData->team = BLACK;
+    change_game_status(GAMEWAIT);
     const gchar *port = gtk_entry_get_text(appData->entryPort);
     const gchar *ip = gtk_entry_get_text(appData->entryIP);
 
@@ -92,6 +97,7 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn, AppData *appData) {
             perror("Problem in connecting to the server");
             exit(1);
         }
+
         printf("connect to another player !");
         Protocol aProtocol;
         aProtocol.mode = JOIN;
@@ -106,6 +112,19 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn, AppData *appData) {
     }
     printf("connect success !");
 
+    if (fcntl(appData->socketfd, F_SETFL, O_NONBLOCK | O_ASYNC)) {
+        printf("Error in setting socket to async, nonblock mode");
+        exit(21);
+    }
+
+
+    signal(SIGIO, rev_from_player);
+
+    if (fcntl(appData->socketfd, F_SETOWN, getpid()) < 0) {
+        perror("fcntl F_SETOWN");
+        exit(22);
+    }
+
     gtk_widget_show((GtkWidget *) appData->wPlay);
     gtk_widget_hide((GtkWidget *) appData->wJoinInfo);
 }
@@ -115,12 +134,12 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn, AppData *appData) {
  *  wGameInfo
  */
 
-G_MODULE_EXPORT void on_btnCancelGameInfo_clicked(GtkButton *btn, AppData *appData) {
+G_MODULE_EXPORT void on_btnCancelGameInfo_clicked(GtkButton *btn) {
     gtk_widget_show((GtkWidget *) appData->wStart);
     gtk_widget_hide((GtkWidget *) appData->wGameInfo);
 }
 
-G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn, AppData *appData) {
+G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn) {
 //     socket here
 
     appData->team = WHITE;
@@ -163,6 +182,16 @@ G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn, AppData *appData) {
     printf("connect success !");
     close(listenfd);
 
+    if (fcntl(appData->socketfd, F_SETFL, O_NONBLOCK | O_ASYNC))
+        printf("Error in setting socket to async, nonblock mode");
+
+    signal(SIGIO, rev_from_player);
+
+    if (fcntl(appData->socketfd, F_SETOWN, getpid()) < 0) {
+        perror("fcntl F_SETOWN");
+        exit(1);
+    }
+
     // socket here
     gtk_widget_show((GtkWidget *) appData->wPlay);
     gtk_widget_hide((GtkWidget *) appData->wGameInfo);
@@ -173,7 +202,7 @@ G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn, AppData *appData) {
  */
 
 
-G_MODULE_EXPORT void on_place_clicked(GtkButton *btn, AppData *appData) {
+G_MODULE_EXPORT void on_place_clicked(GtkButton *btn) {
     if (appData->gameState == GAMEWAIT) {
         printf("GAMEWAIT\n");
         return;
@@ -196,14 +225,14 @@ G_MODULE_EXPORT void on_place_clicked(GtkButton *btn, AppData *appData) {
 
         if ((i == appData->curloc.x) && (j == appData->curloc.y)) {
             // cancel action
-            change_game_status(GAMENONE, appData);
+            change_game_status(GAMENONE);
             clear_all_effect(appData);
             return;
         }
 
 
         if (appData->squareMap[i][j]->p != NULL && appData->squareMap[i][j]->p->team == appData->team) {
-            change_game_status(GAMENONE, appData);
+            change_game_status(GAMENONE);
             clear_all_effect(appData);
             return;
         }
@@ -213,22 +242,22 @@ G_MODULE_EXPORT void on_place_clicked(GtkButton *btn, AppData *appData) {
         switch (pieceType) {
 
             case KING:
-                king_act(i, j, appData);
+                king_act(i, j);
                 break;
             case QUEEN:
-                queen_act(i, j, appData);
+                queen_act(i, j);
                 break;
             case ROOK:
-                rook_act(i, j, appData);
+                rook_act(i, j);
                 break;
             case KNIGHT:
-                knight_act(i, j, appData);
+                knight_act(i, j);
                 break;
             case BISHOP:
-                bishop_act(i, j, appData);
+                bishop_act(i, j);
                 break;
             case PAWN:
-                pawn_act(i, j, appData);
+                pawn_act(i, j);
                 break;
         }
 
@@ -259,28 +288,28 @@ G_MODULE_EXPORT void on_place_clicked(GtkButton *btn, AppData *appData) {
     switch (appData->squareMap[i][j]->p->pieceType) {
 
         case KING:
-            king_move(i, j, appData);
+            king_move(i, j);
             break;
         case QUEEN:
-            queen_move(i, j, appData);
+            queen_move(i, j);
             break;
         case ROOK:
-            rook_move(i, j, appData);
+            rook_move(i, j);
             break;
         case KNIGHT:
-            knight_move(i, j, appData);
+            knight_move(i, j);
             break;
         case BISHOP:
-            bishop_move(i, j, appData);
+            bishop_move(i, j);
             break;
         case PAWN:
-            pawn_move(i, j, appData);
+            pawn_move(i, j);
             break;
     }
-    change_game_status(GAMEACT, appData);
+    change_game_status(GAMEACT);
 }
 
-void king_move(int x, int y, AppData *appData) {
+void king_move(int x, int y) {
     int i, j;
     i = x;
     j = y + 1;
@@ -317,7 +346,7 @@ void king_move(int x, int y, AppData *appData) {
 
 }
 
-void queen_move(int x, int y, AppData *appData) {
+void queen_move(int x, int y) {
     int i, j;
     i = x;
 
@@ -387,7 +416,7 @@ void queen_move(int x, int y, AppData *appData) {
 
 }
 
-void knight_move(int x, int y, AppData *appData) {
+void knight_move(int x, int y) {
     int i, j;
     i = x + 1;
     j = y + 2;
@@ -426,7 +455,7 @@ void knight_move(int x, int y, AppData *appData) {
     LOCATION_ACT(i, j);
 }
 
-void bishop_move(int x, int y, AppData *appData) {
+void bishop_move(int x, int y) {
     int i, j;
     for (i = x + 1, j = y + 1;
          i < MAX_CHESS_SIDE_SIZE && j < MAX_CHESS_SIDE_SIZE;
@@ -461,7 +490,7 @@ void bishop_move(int x, int y, AppData *appData) {
     }
 }
 
-void rook_move(int x, int y, AppData *appData) {
+void rook_move(int x, int y) {
     int i, j;
     i = x;
 
@@ -495,7 +524,7 @@ void rook_move(int x, int y, AppData *appData) {
     }
 }
 
-void pawn_move(int x, int y, AppData *appData) {
+void pawn_move(int x, int y) {
 
     int i, j, direct = (appData->team == WHITE) ? 1 : -1;
     i = x;
@@ -517,8 +546,8 @@ void pawn_move(int x, int y, AppData *appData) {
 
 
     if (appData->squareMap[i][j]->p != NULL && appData->squareMap[i][j]->p->team != appData->team) {
-        high_light_place(i, j, "enemy", appData);
-        add_to_effect_array(i, j, "enemy", appData);
+        high_light_place(i, j, "enemy");
+        add_to_effect_array(i, j, "enemy");
     }
 
 
@@ -526,8 +555,8 @@ void pawn_move(int x, int y, AppData *appData) {
         // // En passant
         if (appData->squareMap[i][j - direct]->p->team != appData->team &&
             appData->squareMap[i][j - direct]->p->pieceType == PAWN) {
-            high_light_place(i, j, "enemy", appData);
-            add_to_effect_array(i, j, "enemy", appData);
+            high_light_place(i, j, "enemy");
+            add_to_effect_array(i, j, "enemy");
         }
 
     }
@@ -539,16 +568,16 @@ void pawn_move(int x, int y, AppData *appData) {
     }
 
     if (appData->squareMap[i][j]->p != NULL && appData->squareMap[i][j]->p->team != appData->team) {
-        high_light_place(i, j, "enemy", appData);
-        add_to_effect_array(i, j, "enemy", appData);
+        high_light_place(i, j, "enemy");
+        add_to_effect_array(i, j, "enemy");
     }
 
     if (appData->squareMap[i][j - direct]->p != NULL) {
         // En passant
         if (appData->squareMap[i][j - direct]->p->team != appData->team &&
             appData->squareMap[i][j - direct]->p->pieceType == PAWN) {
-            high_light_place(i, j, "enemy", appData);
-            add_to_effect_array(i, j, "enemy", appData);
+            high_light_place(i, j, "enemy");
+            add_to_effect_array(i, j, "enemy");
         }
 
     }
@@ -556,12 +585,12 @@ void pawn_move(int x, int y, AppData *appData) {
 
 }
 
-void high_light_place(int x, int y, const gchar *style_name, AppData *appData) {
+void high_light_place(int x, int y, const gchar *style_name) {
     gtk_style_context_add_class(gtk_widget_get_style_context((GtkWidget *) appData->squareMap[x][y]->place),
                                 style_name);
 }
 
-void king_act(int x, int y, AppData *appData) {
+void king_act(int x, int y) {
 
     int i = appData->curloc.x;
     int j = appData->curloc.y;
@@ -575,8 +604,8 @@ void king_act(int x, int y, AppData *appData) {
 
         appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
         appData->squareMap[i][j]->p = NULL;
-        place_img_update(x, y, appData);
-        place_img_update(i, j, appData);
+        place_img_update(x, y);
+        place_img_update(i, j);
     } else {
 
         if (appData->squareMap[x][y]->p->team != appData->team) {
@@ -584,19 +613,19 @@ void king_act(int x, int y, AppData *appData) {
             appData->squareMap[x][y]->p->status = DEAD;
             appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
             appData->squareMap[i][j]->p = NULL;
-            place_img_update(x, y, appData);
-            place_img_update(i, j, appData);
+            place_img_update(x, y);
+            place_img_update(i, j);
         }
     }
-    change_game_status(GAMEWAIT, appData);
+    change_game_status(GAMEWAIT);
 
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y, appData);
+    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
 
     end:
     clear_all_effect(appData);
 }
 
-void queen_act(int x, int y, AppData *appData) {
+void queen_act(int x, int y) {
     int i = appData->curloc.x;
     int j = appData->curloc.y;
 
@@ -702,8 +731,8 @@ void queen_act(int x, int y, AppData *appData) {
 
         appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
         appData->squareMap[i][j]->p = NULL;
-        place_img_update(x, y, appData);
-        place_img_update(i, j, appData);
+        place_img_update(x, y);
+        place_img_update(i, j);
     } else {
 
         if (appData->squareMap[x][y]->p->team != appData->team) {
@@ -711,19 +740,19 @@ void queen_act(int x, int y, AppData *appData) {
             appData->squareMap[x][y]->p->status = DEAD;
             appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
             appData->squareMap[i][j]->p = NULL;
-            place_img_update(x, y, appData);
-            place_img_update(i, j, appData);
+            place_img_update(x, y);
+            place_img_update(i, j);
         }
     }
 
-    change_game_status(GAMEWAIT, appData);
+    change_game_status(GAMEWAIT);
 
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y, appData);
+    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
 }
 
-void knight_act(int x, int y, AppData *appData) {
+void knight_act(int x, int y) {
     int i = appData->curloc.x;
     int j = appData->curloc.y;
 
@@ -739,8 +768,8 @@ void knight_act(int x, int y, AppData *appData) {
 
         appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
         appData->squareMap[i][j]->p = NULL;
-        place_img_update(x, y, appData);
-        place_img_update(i, j, appData);
+        place_img_update(x, y);
+        place_img_update(i, j);
     } else {
 
         if (appData->squareMap[x][y]->p->team != appData->team) {
@@ -748,17 +777,17 @@ void knight_act(int x, int y, AppData *appData) {
             appData->squareMap[x][y]->p->status = DEAD;
             appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
             appData->squareMap[i][j]->p = NULL;
-            place_img_update(x, y, appData);
-            place_img_update(i, j, appData);
+            place_img_update(x, y);
+            place_img_update(i, j);
         }
     }
-    change_game_status(GAMEWAIT, appData);
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y, appData);
+    change_game_status(GAMEWAIT);
+    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
 }
 
-void bishop_act(int x, int y, AppData *appData) {
+void bishop_act(int x, int y) {
     int i = appData->curloc.x;
     int j = appData->curloc.y;
 
@@ -822,8 +851,8 @@ void bishop_act(int x, int y, AppData *appData) {
 
         appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
         appData->squareMap[i][j]->p = NULL;
-        place_img_update(x, y, appData);
-        place_img_update(i, j, appData);
+        place_img_update(x, y);
+        place_img_update(i, j);
     } else {
 
         if (appData->squareMap[x][y]->p->team != appData->team) {
@@ -831,18 +860,18 @@ void bishop_act(int x, int y, AppData *appData) {
             appData->squareMap[x][y]->p->status = DEAD;
             appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
             appData->squareMap[i][j]->p = NULL;
-            place_img_update(x, y, appData);
-            place_img_update(i, j, appData);
+            place_img_update(x, y);
+            place_img_update(i, j);
         }
     }
-    change_game_status(GAMEWAIT, appData);
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y, appData);
+    change_game_status(GAMEWAIT);
+    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
 
 }
 
-void rook_act(int x, int y, AppData *appData) {
+void rook_act(int x, int y) {
     int i = appData->curloc.x;
     int j = appData->curloc.y;
 
@@ -892,8 +921,8 @@ void rook_act(int x, int y, AppData *appData) {
 
         appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
         appData->squareMap[i][j]->p = NULL;
-        place_img_update(x, y, appData);
-        place_img_update(i, j, appData);
+        place_img_update(x, y);
+        place_img_update(i, j);
     } else {
 
         if (appData->squareMap[x][y]->p->team != appData->team) {
@@ -901,19 +930,19 @@ void rook_act(int x, int y, AppData *appData) {
             appData->squareMap[x][y]->p->status = DEAD;
             appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
             appData->squareMap[i][j]->p = NULL;
-            place_img_update(x, y, appData);
-            place_img_update(i, j, appData);
+            place_img_update(x, y);
+            place_img_update(i, j);
         }
     }
-    change_game_status(GAMEWAIT, appData);
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y, appData);
+    change_game_status(GAMEWAIT);
+    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
 
 
 }
 
-void pawn_act(int x, int y, AppData *appData) {
+void pawn_act(int x, int y) {
     int i = appData->curloc.x;
     int j = appData->curloc.y;
     int direct = (appData->team == WHITE) ? 1 : -1;
@@ -924,7 +953,7 @@ void pawn_act(int x, int y, AppData *appData) {
                 appData->squareMap[x][j]->p->team != appData->squareMap[i][j]->p->team) {
                 appData->squareMap[x][j]->p->status = DEAD;
                 appData->squareMap[x][j]->p = NULL;
-                place_img_update(x, j, appData);
+                place_img_update(x, j);
                 goto skip;
             }
 
@@ -943,8 +972,8 @@ void pawn_act(int x, int y, AppData *appData) {
         skip:
         appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
         appData->squareMap[i][j]->p = NULL;
-        place_img_update(x, y, appData);
-        place_img_update(i, j, appData);
+        place_img_update(x, y);
+        place_img_update(i, j);
     } else {
         if (!(i - x == 1 || i - x == -1)) {
             goto end;
@@ -958,29 +987,30 @@ void pawn_act(int x, int y, AppData *appData) {
             appData->squareMap[x][y]->p->status = DEAD;
             appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
             appData->squareMap[i][j]->p = NULL;
-            place_img_update(x, y, appData);
-            place_img_update(i, j, appData);
+            place_img_update(x, y);
+            place_img_update(i, j);
         }
     }
 
     if (appData->squareMap[x][y]->p->team == WHITE && y == 7) {
         appData->squareMap[x][y]->p->pieceType = QUEEN;
-        place_img_update(x, y, appData);
+        place_img_update(x, y);
     }
 
     if (appData->squareMap[x][y]->p->team == BLACK && y == 0) {
         appData->squareMap[x][y]->p->pieceType = QUEEN;
-        place_img_update(x, y, appData);
+        place_img_update(x, y);
     }
-    change_game_status(GAMEWAIT, appData);
-    send_to_player(appData->curloc.x, appData->curloc.y, x, y, appData);
+
+    change_game_status(GAMEWAIT);
+    send_to_player(appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
 
 
 }
 
-void place_img_update(int x, int y, AppData *appData) {
+void place_img_update(int x, int y) {
 
     Piece *p = appData->squareMap[x][y]->p;
 
@@ -1040,7 +1070,7 @@ void place_img_update(int x, int y, AppData *appData) {
     }
 }
 
-void add_to_effect_array(int x, int y, gchar *style_name, AppData *appData) {
+void add_to_effect_array(int x, int y, gchar *style_name) {
     appData->effectLocIndex = appData->effectLocIndex + 1;
     appData->effectLoc[appData->effectLocIndex].x = x;
     appData->effectLoc[appData->effectLocIndex].y = y;
@@ -1060,7 +1090,7 @@ void clear_all_effect(AppData *appData) {
     appData->effectLocIndex = -1;
 }
 
-void change_game_status(GameState gameState, AppData *appData) {
+void change_game_status(GameState gameState) {
     switch (gameState) {
 
         case GAMEWAIT:
@@ -1078,7 +1108,7 @@ void change_game_status(GameState gameState, AppData *appData) {
     }
 }
 
-void send_to_player(int x, int y, int i, int j, AppData *appData) {
+void send_to_player(int x, int y, int i, int j) {
     Protocol aProtocol;
 
     aProtocol.from.x = (unsigned int) x;
@@ -1088,34 +1118,33 @@ void send_to_player(int x, int y, int i, int j, AppData *appData) {
     aProtocol.to.x = (unsigned int) i;
     aProtocol.to.y = (unsigned int) j;
 
+    printf("!!! %d %d %d %d\n", x, y, i, j);
+    printf("zzz %d %d %d %d\n", aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y);
+
+
     aProtocol.mode = MOVE;
 
     send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
 
-    recv(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-
-    another_player_move(aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y, appData);
 }
 
-void another_player_move(int i, int j, int x, int y, AppData *appData) {
+void another_player_move(int i, int j, int x, int y) {
     if (appData->squareMap[x][y]->p == NULL) {
 
-        if(appData->squareMap[i][j]->p->pieceType == PAWN) {
+        if (appData->squareMap[i][j]->p->pieceType == PAWN) {
             if (appData->squareMap[x][j]->p != NULL &&
                 appData->squareMap[x][j]->p->team != appData->squareMap[i][j]->p->team) {
                 appData->squareMap[x][j]->p->status = DEAD;
                 appData->squareMap[x][j]->p = NULL;
-                place_img_update(x, j, appData);
+                place_img_update(x, j);
             }
         }
 
 
-
         appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
         appData->squareMap[i][j]->p = NULL;
-        place_img_update(x, y, appData);
-        place_img_update(i, j, appData);
-
+        place_img_update(x, y);
+        place_img_update(i, j);
 
 
     } else {
@@ -1125,9 +1154,8 @@ void another_player_move(int i, int j, int x, int y, AppData *appData) {
             appData->squareMap[x][y]->p->status = DEAD;
             appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
             appData->squareMap[i][j]->p = NULL;
-            place_img_update(x, y, appData);
-            place_img_update(i, j, appData);
-
+            place_img_update(x, y);
+            place_img_update(i, j);
 
 
         } else {
@@ -1143,12 +1171,12 @@ void another_player_move(int i, int j, int x, int y, AppData *appData) {
 
     if (appData->squareMap[x][y]->p->team == WHITE && y == 7) {
         appData->squareMap[x][y]->p->pieceType = QUEEN;
-        place_img_update(x, y, appData);
+        place_img_update(x, y);
     }
 
     if (appData->squareMap[x][y]->p->team == BLACK && y == 0) {
         appData->squareMap[x][y]->p->pieceType = QUEEN;
-        place_img_update(x, y, appData);
+        place_img_update(x, y);
     }
 
     Protocol aProtocol;
@@ -1158,4 +1186,19 @@ void another_player_move(int i, int j, int x, int y, AppData *appData) {
     send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
 
     end:;
+}
+
+void rev_from_player(int signo) {
+    Protocol aProtocol;
+
+    recv(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+
+    if (aProtocol.mode == MOVE) {
+        if (appData->squareMap[aProtocol.from.x][aProtocol.from.y]->p != NULL) {
+            another_player_move(aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y);
+            change_game_status(GAMENONE);
+        }
+    }
+
+
 }

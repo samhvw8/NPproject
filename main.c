@@ -4,9 +4,9 @@
 #define  UI_FILE "chess.glade"
 #define  CSS_FILE "myCSS.css"
 
-int main(int argc, char **argv) {
+AppData *appData;
 
-    AppData *appData;
+int main(int argc, char **argv) {
 
     GtkBuilder *builder;
     GError *error = NULL;
@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
     }
 
 
-    change_game_status(GAMENONE, appData);
+    change_game_status(GAMENONE);
 
     appData->effectLocIndex = -1;
 

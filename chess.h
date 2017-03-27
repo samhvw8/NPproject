@@ -14,8 +14,8 @@
 
 // location
 typedef struct loc_s {
-    unsigned int x : 3;
-    unsigned int y : 3;
+    unsigned int x;
+    unsigned int y;
 } Loc;
 
 

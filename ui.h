@@ -120,4 +120,6 @@ extern GdkPixbuf *imgArr[13];
 
 void init_img();
 
+extern AppData *appData;
+
 #endif //PROJECTNP_UI_H
