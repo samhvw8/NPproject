@@ -100,6 +100,7 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
 
         printf("connect to another player !");
         Protocol aProtocol;
+        bzero(&aProtocol, sizeof(Protocol));
         aProtocol.mode = JOIN;
 
         send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
@@ -170,12 +171,14 @@ G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn) {
         if (aProtocol.mode == JOIN) {
             break;
         }
+        bzero(&aProtocol, sizeof(Protocol));
         aProtocol.mode = ERR;
         send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
         printf("Wait JOIN !\n");
     }
 
     Protocol aProtocol;
+    bzero(&aProtocol, sizeof(Protocol));
     aProtocol.mode = ACK;
 
     send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
@@ -1013,7 +1016,7 @@ void pawn_act(int x, int y) {
 void place_img_update(int x, int y) {
 
 
-    printf("!zzzz! %d %d\n",x ,y);
+    printf("!zzzz! %d %d\n", x, y);
 
     Piece *p = appData->squareMap[x][y]->p;
 
@@ -1071,6 +1074,7 @@ void place_img_update(int x, int y) {
             }
             break;
     }
+
 }
 
 void add_to_effect_array(int x, int y, gchar *style_name) {
@@ -1113,7 +1117,7 @@ void change_game_status(GameState gameState) {
 
 void send_to_player(int x, int y, int i, int j) {
     Protocol aProtocol;
-
+    bzero(&aProtocol, sizeof(Protocol));
     aProtocol.from.x = (unsigned int) x;
     aProtocol.from.y = (unsigned int) y;
 
@@ -1126,7 +1130,8 @@ void send_to_player(int x, int y, int i, int j) {
 
     send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
 
-    printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y);
+    printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+           aProtocol.to.y);
 }
 
 void another_player_move(int i, int j, int x, int y) {
@@ -1161,7 +1166,7 @@ void another_player_move(int i, int j, int x, int y) {
 
         } else {
             Protocol aProtocol;
-
+            bzero(&aProtocol, sizeof(Protocol));
             aProtocol.mode = ERR;
 
             send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
@@ -1184,7 +1189,7 @@ void another_player_move(int i, int j, int x, int y) {
 
 
     Protocol aProtocol;
-
+    bzero(&aProtocol, sizeof(Protocol));
     aProtocol.mode = ACK;
 
     send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
@@ -1195,10 +1200,14 @@ void another_player_move(int i, int j, int x, int y) {
 void rev_from_player(int signo) {
     Protocol aProtocol;
 
-    recv(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+    ssize_t n = recv(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
 
-
-    printf("rev %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y);
+    if (n > 0) {
+        printf("rev %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+               aProtocol.to.y);
+    } else {
+        return;
+    }
 
 
     switch (aProtocol.mode) {
@@ -1217,20 +1226,21 @@ void rev_from_player(int signo) {
                     if (appData->squareMap[x][y]->p == NULL) {
 
                         if (appData->squareMap[i][j]->p->pieceType == PAWN) {
-                            if (appData->squareMap[x][j]->p != NULL &&
-                                appData->squareMap[x][j]->p->team != appData->squareMap[i][j]->p->team) {
-                                appData->squareMap[x][j]->p->status = DEAD;
-                                appData->squareMap[x][j]->p = NULL;
-                                place_img_update(x, j);
+                            if (appData->squareMap[x][j]->p != NULL) {
+                                if (appData->squareMap[x][j]->p->team != appData->squareMap[i][j]->p->team) {
+                                    appData->squareMap[x][j]->p->status = DEAD;
+                                    appData->squareMap[x][j]->p = NULL;
+                                    place_img_update(x, j);
+                                }
                             }
-                        }
 
+                        }
 
                         appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
                         appData->squareMap[i][j]->p = NULL;
                         place_img_update(x, y);
                         place_img_update(i, j);
-
+                        gtk_main_iteration_do (FALSE);
 
                     } else {
 
@@ -1241,11 +1251,11 @@ void rev_from_player(int signo) {
                             appData->squareMap[i][j]->p = NULL;
                             place_img_update(x, y);
                             place_img_update(i, j);
-
+                            gtk_main_iteration_do (FALSE);
 
                         } else {
                             Protocol protocol;
-
+                            bzero(&protocol, sizeof(Protocol));
                             protocol.mode = ERR;
 
                             send(appData->socketfd, &protocol, sizeof(protocol), 0);
@@ -1257,18 +1267,21 @@ void rev_from_player(int signo) {
                         if (appData->squareMap[x][y]->p->team == WHITE && y == 7) {
                             appData->squareMap[x][y]->p->pieceType = QUEEN;
                             place_img_update(x, y);
+                            gtk_main_iteration_do (FALSE);
                         }
 
                         if (appData->squareMap[x][y]->p->team == BLACK && y == 0) {
                             appData->squareMap[x][y]->p->pieceType = QUEEN;
                             place_img_update(x, y);
+                            gtk_main_iteration_do (FALSE);
                         }
 
                     }
 
 
                     Protocol protocol;
-
+                    bzero(&protocol, sizeof(Protocol));
+                    bzero(&protocol, sizeof(Protocol));
                     aProtocol.mode = ACK;
 
                     send(appData->socketfd, &protocol, sizeof(protocol), 0);
@@ -1285,6 +1298,8 @@ void rev_from_player(int signo) {
 //            }
             break;
         case RESIGN:
+            printf("Player disconnect !!");
+            gtk_main_quit();
             break;
         case RESTART:
             break;

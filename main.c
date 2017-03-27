@@ -12,6 +12,7 @@ int main(int argc, char **argv) {
     GError *error = NULL;
     GtkCssProvider *cssProvider;
 
+
     /* Init GTK+ */
     gtk_init(&argc, &argv);
 
