@@ -57,12 +57,16 @@ G_MODULE_EXPORT void on_main_window_destroy(GtkWidget *main_window) {
 
 G_MODULE_EXPORT void on_btnJoinRoom_clicked(GtkButton *btn) {
 
+    gtk_entry_set_text(appData->entryIP, "127.0.0.1");
+    gtk_entry_set_text(appData->entryPort, "8888");
+
     gtk_widget_show((GtkWidget *) appData->wJoinInfo);
     gtk_widget_hide((GtkWidget *) appData->wStart);
 }
 
 
 G_MODULE_EXPORT void on_btnCreateRoom_clicked(GtkButton *btn) {
+    gtk_entry_set_text(appData->entryPortGameInfo, "8888");
 
     gtk_widget_show((GtkWidget *) appData->wGameInfo);
     gtk_widget_hide((GtkWidget *) appData->wStart);
@@ -179,6 +183,7 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
  */
 
 G_MODULE_EXPORT void on_btnCancelGameInfo_clicked(GtkButton *btn) {
+
     gtk_widget_show((GtkWidget *) appData->wStart);
     gtk_widget_hide((GtkWidget *) appData->wGameInfo);
 }
