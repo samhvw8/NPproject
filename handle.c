@@ -140,7 +140,11 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
     while (1) {
         if (connect(appData->socketfd, (struct sockaddr *) &(appData->servaddr), sizeof((appData->servaddr))) < 0) {
             perror("Problem in connecting to the server");
-            exit(1);
+
+            gtk_widget_show((GtkWidget *) appData->wJoinInfo);
+            gtk_widget_hide((GtkWidget *) appData->wWait);
+
+            goto end;
         }
 
         printf("connect to another player !");
@@ -175,6 +179,7 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
 
     gtk_widget_show((GtkWidget *) appData->wPlay);
     gtk_widget_hide((GtkWidget *) appData->wWait);
+    end:;
 }
 
 
