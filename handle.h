@@ -98,8 +98,6 @@ void change_game_status(GameState gameState);
 
 void send_to_player(Mode mode,int x, int y, int i, int j);
 
-void another_player_move(int i, int j, int x, int y);
-
 void rev_from_player(int signo);
 
 void change_team(Team team);
