@@ -30,7 +30,8 @@ typedef enum gamestate_e {
     YTURN, // your turn start
     ATURN, // act turn // need to choose action
     ETURN, // end turn // wait another player recv move
-    OTURN // another player turn // wait
+    OTURN, // another player turn // wait
+    ENDGAME
 } GameState;
 
 typedef enum team_e {
