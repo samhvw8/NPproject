@@ -27,9 +27,10 @@ typedef enum piecestype_e {
 } PieceType;
 
 typedef enum gamestate_e {
-    GAMEWAIT, // wait another player
-    GAMEACT, // wsit complete move
-    GAMENONE
+    YTURN, // your turn start
+    ATURN, // act turn // need to choose action
+    ETURN, // end turn // wait another player recv move
+    OTURN // another player turn // wait
 } GameState;
 
 typedef enum team_e {
