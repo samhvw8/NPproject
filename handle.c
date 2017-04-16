@@ -123,7 +123,7 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
 
     change_team(BLACK);
 
-    change_game_status(GAMEWAIT);
+    change_game_status(OTURN);
     const gchar *port = gtk_entry_get_text(appData->entryPort);
     const gchar *ip = gtk_entry_get_text(appData->entryIP);
 
@@ -287,7 +287,8 @@ G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn) {
 
 
 G_MODULE_EXPORT void on_place_clicked(GtkButton *btn) {
-    if (appData->gameState == GAMEWAIT) {
+    if (appData->gameState == OTURN || appData->gameState == ETURN || appData->gameState == ENDGAME) {
+        // can't move when not your turn or wait for another player rev
         return;
     }
 
@@ -303,19 +304,19 @@ G_MODULE_EXPORT void on_place_clicked(GtkButton *btn) {
     endloop:
 
 
-    if (appData->gameState == GAMEACT) {
-        // GAMEACT
+    if (appData->gameState == ATURN) {
+        // ATURN
 
         if ((i == appData->curloc.x) && (j == appData->curloc.y)) {
             // cancel action
-            change_game_status(GAMENONE);
+            change_game_status(YTURN);
             clear_all_effect(appData);
             return;
         }
 
 
         if (appData->squareMap[i][j]->p != NULL && appData->squareMap[i][j]->p->team == appData->team) {
-            change_game_status(GAMENONE);
+            change_game_status(YTURN);
             clear_all_effect(appData);
             return;
         }
@@ -348,16 +349,16 @@ G_MODULE_EXPORT void on_place_clicked(GtkButton *btn) {
         return;
     }
 
-    if (appData->squareMap[i][j]->p == NULL && appData->gameState == GAMENONE) {
+    if (appData->squareMap[i][j]->p == NULL && appData->gameState == YTURN) {
 
-        // GAMENONE & select space
+        // YTURN & select space
         return;
     }
 
 
 
 
-    // GAMENONE & select piece
+    // YTURN & select piece
 
     if (appData->squareMap[i][j]->p->team != appData->team) {
         // can't control another player's piece;
@@ -389,7 +390,8 @@ G_MODULE_EXPORT void on_place_clicked(GtkButton *btn) {
             pawn_move(i, j);
             break;
     }
-    change_game_status(GAMEACT);
+
+    change_game_status(ATURN);
 }
 
 void king_move(int x, int y) {
@@ -700,7 +702,7 @@ void king_act(int x, int y) {
             place_img_update(i, j);
         }
     }
-    change_game_status(GAMEWAIT);
+
 
     send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
 
@@ -828,8 +830,6 @@ void queen_act(int x, int y) {
         }
     }
 
-    change_game_status(GAMEWAIT);
-
     send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
@@ -864,7 +864,7 @@ void knight_act(int x, int y) {
             place_img_update(i, j);
         }
     }
-    change_game_status(GAMEWAIT);
+
     send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
@@ -947,7 +947,6 @@ void bishop_act(int x, int y) {
             place_img_update(i, j);
         }
     }
-    change_game_status(GAMEWAIT);
     send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
@@ -1017,7 +1016,7 @@ void rook_act(int x, int y) {
             place_img_update(i, j);
         }
     }
-    change_game_status(GAMEWAIT);
+
     send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
@@ -1085,7 +1084,6 @@ void pawn_act(int x, int y) {
         place_img_update(x, y);
     }
 
-    change_game_status(GAMEWAIT);
     send_to_player(MOVE, appData->curloc.x, appData->curloc.y, x, y);
     end:
     clear_all_effect(appData);
@@ -1178,17 +1176,21 @@ void clear_all_effect(AppData *appData) {
 void change_game_status(GameState gameState) {
     switch (gameState) {
 
-        case GAMEWAIT:
+        case OTURN:
             gtk_label_set_text(appData->labelStatusPlay, "Wait Another Player !!");
-            appData->gameState = GAMEWAIT;
+            appData->gameState = OTURN;
             break;
-        case GAMEACT:
+        case ATURN:
             gtk_label_set_text(appData->labelStatusPlay, "Choose Location");
-            appData->gameState = GAMEACT;
+            appData->gameState = ATURN;
             break;
-        case GAMENONE:
+        case YTURN:
             gtk_label_set_text(appData->labelStatusPlay, "Choose Piece");
-            appData->gameState = GAMENONE;
+            appData->gameState = YTURN;
+            break;
+        case ETURN:
+            gtk_label_set_text(appData->labelStatusPlay, "Send to another player");
+            appData->gameState = YTURN;
             break;
     }
 }
@@ -1201,123 +1203,63 @@ void send_to_player(Mode mode, int x, int y, int i, int j) {
 
         case JOIN:
             aProtocol.mode = JOIN;
-            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
-                   aProtocol.to.y);
             break;
         case MOVE:
+            change_game_status(ETURN);
             aProtocol.from.x = (unsigned int) x;
             aProtocol.from.y = (unsigned int) y;
-
-
             aProtocol.to.x = (unsigned int) i;
             aProtocol.to.y = (unsigned int) j;
-
-
             aProtocol.mode = MOVE;
-
-            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
-                   aProtocol.to.y);
-            check_game_end();
-
             break;
         case RESIGN:
             aProtocol.mode = RESIGN;
-            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
-                   aProtocol.to.y);
             break;
         case RESTART:
             aProtocol.mode = RESTART;
-            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
-                   aProtocol.to.y);
             break;
         case ACK:
             aProtocol.mode = ACK;
-            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
-                   aProtocol.to.y);
             break;
         case ERR:
             aProtocol.mode = ERR;
-            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
-                   aProtocol.to.y);
             break;
         case QUIT:
             aProtocol.mode = QUIT;
-            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
-                   aProtocol.to.y);
             break;
         case END:
             aProtocol.mode = END;
             aProtocol.from.x = (unsigned int) x;
-            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
-            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
-                   aProtocol.to.y);
             break;
     }
 
+    switch (mode) {
 
-}
-
-void another_player_move(int i, int j, int x, int y) {
-    if (appData->squareMap[x][y]->p == NULL) {
-
-        if (appData->squareMap[i][j]->p->pieceType == PAWN) {
-            if (appData->squareMap[x][j]->p != NULL &&
-                appData->squareMap[x][j]->p->team != appData->squareMap[i][j]->p->team) {
-                appData->squareMap[x][j]->p->status = DEAD;
-                appData->squareMap[x][j]->p = NULL;
-                place_img_update(x, j);
-            }
-        }
-
-
-        appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
-        appData->squareMap[i][j]->p = NULL;
-        place_img_update(x, y);
-        place_img_update(i, j);
-
-
-    } else {
-
-        if (appData->squareMap[x][y]->p->team != appData->squareMap[i][j]->p->team) {
-
-            appData->squareMap[x][y]->p->status = DEAD;
-            appData->squareMap[x][y]->p = appData->squareMap[i][j]->p;
-            appData->squareMap[i][j]->p = NULL;
-            place_img_update(x, y);
-            place_img_update(i, j);
-
-
-        } else {
-            send_to_player(ERR, 0, 0, 0, 0);
-            goto end;
-        }
-    }
-    if (appData->squareMap[x][y]->p->pieceType == PAWN) {
-
-        if (appData->squareMap[x][y]->p->team == WHITE && y == 7) {
-            appData->squareMap[x][y]->p->pieceType = QUEEN;
-            place_img_update(x, y);
-        }
-
-        if (appData->squareMap[x][y]->p->team == BLACK && y == 0) {
-            appData->squareMap[x][y]->p->pieceType = QUEEN;
-            place_img_update(x, y);
-        }
+        case JOIN:
+        case RESIGN:
+        case RESTART:
+        case QUIT:
+        case END:
+        case ACK:
+        case ERR:
+            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+                   aProtocol.to.y);
+            appData->lastProtocol = aProtocol;
+            break;
+        case MOVE:
+            send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
+            printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
+                   aProtocol.to.y);
+            appData->lastProtocol = aProtocol;
+            check_game_end();
+            break;
 
     }
 
 
-    send_to_player(ACK, 0, 0, 0, 0);
-
-    end:;
 }
+
 
 void rev_from_player(int signo) {
     Protocol aProtocol;
@@ -1335,6 +1277,8 @@ void rev_from_player(int signo) {
     switch (aProtocol.mode) {
 
         case JOIN:
+            send_to_player(ERR, 0, 0, 0, 0);
+
             break;
         case MOVE:
             if (appData->squareMap[aProtocol.from.x][aProtocol.from.y]->p != NULL) {
@@ -1382,16 +1326,19 @@ void rev_from_player(int signo) {
                     }
                     if (appData->squareMap[x][y]->p->pieceType == PAWN) {
 
-                        if (appData->squareMap[x][y]->p->team == WHITE && y == 7) {
-                            appData->squareMap[x][y]->p->pieceType = QUEEN;
-                            place_img_update(x, y);
-                            gtk_main_iteration_do(FALSE);
-                        }
 
-                        if (appData->squareMap[x][y]->p->team == BLACK && y == 0) {
-                            appData->squareMap[x][y]->p->pieceType = QUEEN;
-                            place_img_update(x, y);
-                            gtk_main_iteration_do(FALSE);
+                        if (appData->squareMap[x][y]->p->team == WHITE) {
+                            if (y == 7) {
+                                appData->squareMap[x][y]->p->pieceType = QUEEN;
+                                place_img_update(x, y);
+                                gtk_main_iteration_do(FALSE);
+                            }
+                        } else {
+                            if (y == 0) {
+                                appData->squareMap[x][y]->p->pieceType = QUEEN;
+                                place_img_update(x, y);
+                                gtk_main_iteration_do(FALSE);
+                            }
                         }
 
                     }
@@ -1403,7 +1350,7 @@ void rev_from_player(int signo) {
                 }
 
 
-                change_game_status(GAMENONE);
+                change_game_status(YTURN);
             }
 
             break;
@@ -1431,18 +1378,85 @@ void rev_from_player(int signo) {
             gtk_label_set_text(appData->labelStatusRestart, "The game will start after 3s");
             gtk_main_iteration_do(FALSE);
 
+            switch (appData->team) {
+
+                case BLACK:
+                    change_game_status(OTURN);
+                    break;
+
+                case WHITE:
+                    change_game_status(YTURN);
+                    break;
+
+            }
+
             sleep(3);
             gtk_widget_hide((GtkWidget *) appData->wRestart);
             gtk_widget_show((GtkWidget *) appData->wPlay);
 
             break;
         case ACK:
+
+            switch ((appData->lastProtocol).mode) {
+
+                case JOIN:
+                    break;
+                case MOVE:
+                    change_game_status(OTURN);
+
+                    break;
+                case RESIGN:
+                case RESTART:
+
+                    switch (appData->team) {
+
+                        case BLACK:
+                            change_game_status(OTURN);
+                            break;
+
+                        case WHITE:
+                            change_game_status(YTURN);
+                            break;
+
+                    }
+
+                    break;
+                case QUIT:
+                    break;
+                case END:
+                    break;
+                case ACK:
+                    break;
+                case ERR:
+                    break;
+            }
+
+
             break;
         case ERR:
+
+            switch ((appData->lastProtocol).mode) {
+
+                case JOIN:
+                    break;
+                case MOVE:
+                    break;
+                case RESIGN:
+                    break;
+                case RESTART:
+                    break;
+                case QUIT:
+                    break;
+                case END:
+                    break;
+                case ACK:
+                    break;
+                case ERR:
+                    break;
+            }
+
             break;
 
-        default:
-            break;
         case QUIT:
 
             gtk_widget_hide((GtkWidget *) appData->wPlay);
@@ -1455,19 +1469,12 @@ void rev_from_player(int signo) {
             break;
         case END:
 
-            gtk_widget_hide((GtkWidget *) appData->wPlay);
-            gtk_widget_show((GtkWidget *) appData->wStart);
-
             gtk_widget_show((GtkWidget *) appData->wWait);
-            if (aProtocol.from.x == 0) {
-                gtk_label_set_text(appData->labelStatusWait, "YOU WIN");
-                gtk_main_iteration_do(FALSE);
-                send_to_player(ACK, 0, 0, 0, 0);
-            } else {
-                gtk_label_set_text(appData->labelStatusWait, "YOU LOSE");
-                gtk_main_iteration_do(FALSE);
-                send_to_player(ACK, 1, 0, 0, 0);
-            }
+
+            gtk_label_set_text(appData->labelStatusWait, "YOU LOSE");
+            gtk_main_iteration_do(FALSE);
+            send_to_player(ACK, 0, 0, 0, 0);
+
 
             break;
     }
@@ -1491,35 +1498,20 @@ void change_team(Team team) {
 }
 
 void check_game_end() {
-    int i;
-    int count = 0;
-    for (i = 0; i < (sizeof(piece) / sizeof((piece)[0])); i++) {
-        if (piece[i].pieceType != KING)
-            continue;
-
-        count++;
-
-        if (piece[i].status == DEAD) {
-            gtk_widget_hide((GtkWidget *) appData->wPlay);
-            gtk_widget_show((GtkWidget *) appData->wStart);
-
-            gtk_widget_show((GtkWidget *) appData->wWait);
-            if (piece[i].team == appData->team) {
-                gtk_label_set_text(appData->labelStatusWait, "YOU LOSE");
-                gtk_main_iteration_do(FALSE);
-                send_to_player(END, 0, 0, 0, 0);
-            } else {
-                gtk_label_set_text(appData->labelStatusWait, "YOU WIN");
-                gtk_main_iteration_do(FALSE);
-                send_to_player(END, 1, 0, 0, 0);
-            }
 
 
-        }
+    if (piece[0].status == DEAD || piece[16].status == DEAD) {
+        // always win check
+        gtk_widget_show((GtkWidget *) appData->wWait);
+
+        gtk_label_set_text(appData->labelStatusWait, "YOU WIN");
+        gtk_main_iteration_do(FALSE);
+        send_to_player(END, 1, 0, 0, 0);
 
 
-        if (count == 2) {
-            break;
-        }
+        change_game_status(ENDGAME);
+
     }
+
+
 }

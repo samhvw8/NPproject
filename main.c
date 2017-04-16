@@ -93,6 +93,8 @@ int main(int argc, char **argv) {
 
     init_game();
 
+    change_game_status(YTURN);
+
     appData->effectLocIndex = -1;
 
     /* Connect signals */
