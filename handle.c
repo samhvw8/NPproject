@@ -46,6 +46,7 @@ G_MODULE_EXPORT void on_btnQuit_clicked(GtkButton *btn) {
 // click destroy
 G_MODULE_EXPORT void on_main_window_destroy(GtkWidget *main_window) {
     send_to_player(QUIT, 0, 0, 0, 0);
+    close(appData->socketfd);
     gtk_main_quit();
 }
 
@@ -233,9 +234,6 @@ G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn) {
         if (aProtocol.mode == JOIN) {
             break;
         }
-        bzero(&aProtocol, sizeof(Protocol));
-        aProtocol.mode = ERR;
-        send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
         gtk_label_set_text(appData->labelStatusWait, "Wait guest player to join !");
         gtk_main_iteration_do(FALSE);
     }
@@ -1192,6 +1190,8 @@ void change_game_status(GameState gameState) {
             gtk_label_set_text(appData->labelStatusPlay, "Send to another player");
             appData->gameState = YTURN;
             break;
+        case ENDGAME:
+            break;
     }
 }
 
@@ -1221,8 +1221,8 @@ void send_to_player(Mode mode, int x, int y, int i, int j) {
         case ACK:
             aProtocol.mode = ACK;
             break;
-        case ERR:
-            aProtocol.mode = ERR;
+        case TIMEOUT:
+            aProtocol.mode = TIMEOUT;
             break;
         case QUIT:
             aProtocol.mode = QUIT;
@@ -1241,7 +1241,7 @@ void send_to_player(Mode mode, int x, int y, int i, int j) {
         case QUIT:
         case END:
         case ACK:
-        case ERR:
+        case TIMEOUT:
             send(appData->socketfd, &aProtocol, sizeof(aProtocol), 0);
             printf("send: %d %d %d %d %d\n", aProtocol.mode, aProtocol.from.x, aProtocol.from.y, aProtocol.to.x,
                    aProtocol.to.y);
@@ -1257,6 +1257,32 @@ void send_to_player(Mode mode, int x, int y, int i, int j) {
 
     }
 
+    if (mode == MOVE) {
+        appData->id = g_timeout_add(90000, fn_timeout, NULL);
+
+    }
+
+}
+
+void fn_timeout() {
+    (appData->flag)++;
+    if ((appData->flag) == 1) {
+        send_to_player(TIMEOUT, 0, 0, 0, 0);
+        printf("time out 1 \n");
+        g_source_remove(appData->id);
+        appData->id = g_timeout_add(30000, fn_timeout, NULL);
+    } else {
+        gtk_widget_show((GtkWidget *) appData->wWait);
+
+        gtk_label_set_text(appData->labelStatusWait, "YOU WIN");
+        gtk_main_iteration_do(FALSE);
+        send_to_player(END, 1, 0, 0, 0);
+
+
+        change_game_status(ENDGAME);
+        printf("Win !! \n");
+        g_source_remove(appData->id);
+    }
 
 }
 
@@ -1275,12 +1301,10 @@ void rev_from_player(int signo) {
 
 
     switch (aProtocol.mode) {
-
-        case JOIN:
-            send_to_player(ERR, 0, 0, 0, 0);
-
-            break;
         case MOVE:
+            appData->flag = 0;
+            g_source_remove(appData->id);
+
             if (appData->squareMap[aProtocol.from.x][aProtocol.from.y]->p != NULL) {
 //                another_player_move(aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y);
 
@@ -1319,10 +1343,9 @@ void rev_from_player(int signo) {
                             place_img_update(i, j);
                             gtk_main_iteration_do(FALSE);
 
-                        } else {
-                            send_to_player(ERR, 0, 0, 0, 0);
-                            goto end;
                         }
+
+                        goto end;
                     }
                     if (appData->squareMap[x][y]->p->pieceType == PAWN) {
 
@@ -1427,33 +1450,11 @@ void rev_from_player(int signo) {
                     break;
                 case ACK:
                     break;
-                case ERR:
+
+                case TIMEOUT:
                     break;
             }
 
-
-            break;
-        case ERR:
-
-            switch ((appData->lastProtocol).mode) {
-
-                case JOIN:
-                    break;
-                case MOVE:
-                    break;
-                case RESIGN:
-                    break;
-                case RESTART:
-                    break;
-                case QUIT:
-                    break;
-                case END:
-                    break;
-                case ACK:
-                    break;
-                case ERR:
-                    break;
-            }
 
             break;
 
@@ -1464,7 +1465,7 @@ void rev_from_player(int signo) {
 
             gtk_widget_show((GtkWidget *) appData->wWait);
             gtk_label_set_text(appData->labelStatusWait, "Another Player Quit ! Move to start Window!");
-
+            close(appData->socketfd);
 
             break;
         case END:
@@ -1474,6 +1475,13 @@ void rev_from_player(int signo) {
             gtk_label_set_text(appData->labelStatusWait, "YOU LOSE");
             gtk_main_iteration_do(FALSE);
             send_to_player(ACK, 0, 0, 0, 0);
+
+            break;
+        case JOIN:
+            break;
+        case TIMEOUT:
+
+            printf("30s left \n");
 
 
             break;

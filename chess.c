@@ -102,6 +102,8 @@ void init_game() {
         }
     }
 
+    appData->flag = 0;
+
 }
 
 void new_game() {
@@ -114,6 +116,8 @@ void new_game() {
         appData->squareMap[x][y]->p = NULL;
         gtk_image_set_from_pixbuf(appData->squareMap[x][y]->img, imgArr[SPACE]);
     }
+
+    appData->flag = 0;
 
     init_game();
 }

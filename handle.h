@@ -103,4 +103,6 @@ void rev_from_player(int signo);
 void change_team(Team team);
 
 void check_game_end();
+
+void fn_timeout();
 #endif //PROJECTNP_HANDLE_H

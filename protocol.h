@@ -15,7 +15,7 @@ typedef enum mode_e {
     QUIT,
     END,
     ACK,
-    ERR
+    TIMEOUT
 } Mode;
 
 typedef struct protocol_s {

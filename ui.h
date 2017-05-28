@@ -128,6 +128,9 @@ struct appData_s {
     struct sockaddr_in cliaddr, servaddr;
 
     Protocol lastProtocol;
+    guint id;
+    int flag;
+
 };
 
 typedef struct appData_s AppData;
