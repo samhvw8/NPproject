@@ -59,6 +59,7 @@ int main(int argc, char **argv) {
     CH_GET_OBJECT(builder, entryPortGameInfo, GTK_ENTRY, appData);
 
     CH_GET_OBJECT(builder, labelStatusPlay, GTK_LABEL, appData);
+    CH_GET_OBJECT(builder, labelTimer, GTK_LABEL, appData);
     CH_GET_OBJECT(builder, labelGameSide, GTK_LABEL, appData);
     CH_GET_OBJECT(builder, labelStatusResign, GTK_LABEL, appData);
     CH_GET_OBJECT(builder, labelStatusRestart, GTK_LABEL, appData);

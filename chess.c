@@ -103,6 +103,7 @@ void init_game() {
     }
 
     appData->flag = 0;
+    gtk_label_set_text(appData->labelTimer, "");
 
 }
 

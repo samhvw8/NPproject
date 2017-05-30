@@ -80,6 +80,7 @@ struct appData_s {
     GtkButton *btnResign;
     GtkLabel *labelStatusPlay;
     GtkLabel *labelGameSide;
+    GtkLabel *labelTimer;
 
 
     /*
@@ -129,8 +130,9 @@ struct appData_s {
 
     Protocol lastProtocol;
     guint id;
+    guint id_timer;
     int flag;
-
+    int timer;
 };
 
 typedef struct appData_s AppData;

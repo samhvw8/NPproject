@@ -275,6 +275,7 @@
           <object class="GtkBox">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="homogeneous">True</property>
             <child>
               <object class="GtkLabel" id="labelGameSide">
                 <property name="visible">True</property>
@@ -289,6 +290,19 @@
               </packing>
             </child>
             <child>
+              <object class="GtkLabel" id="labelTimer">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">label</property>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="padding">4</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkLabel" id="labelStatusPlay">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
@@ -296,16 +310,17 @@
                 <property name="width_chars">0</property>
               </object>
               <packing>
-                <property name="expand">True</property>
+                <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="padding">8</property>
-                <property name="position">1</property>
+                <property name="padding">36</property>
+                <property name="position">2</property>
               </packing>
             </child>
           </object>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
+            <property name="padding">11</property>
             <property name="position">1</property>
           </packing>
         </child>

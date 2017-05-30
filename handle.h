@@ -105,4 +105,15 @@ void change_team(Team team);
 void check_game_end();
 
 void fn_timeout();
+
+void fn_timer();
+
+void stop_timeout();
+
+void start_timeout();
+
+void reset_timer();
+
+void stop_timer();
+
 #endif //PROJECTNP_HANDLE_H

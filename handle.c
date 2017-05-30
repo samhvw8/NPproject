@@ -79,6 +79,7 @@ G_MODULE_EXPORT void on_btnCreateRoom_clicked(GtkButton *btn) {
 
 
 G_MODULE_EXPORT void on_btnRestart_clicked(GtkButton *btn) {
+    change_game_status(ENDGAME);
     gtk_widget_show((GtkWidget *) appData->wRestart);
     gtk_label_set_text(appData->labelStatusRestart, "You Lose, The game prepare for restarting !");
     gtk_widget_hide((GtkWidget *) appData->wPlay);
@@ -97,6 +98,7 @@ G_MODULE_EXPORT void on_btnRestart_clicked(GtkButton *btn) {
 }
 
 G_MODULE_EXPORT void on_btnResign_clicked(GtkButton *btn) {
+    change_game_status(ENDGAME);
     gtk_widget_show((GtkWidget *) appData->wResign);
     gtk_widget_hide((GtkWidget *) appData->wPlay);
     gtk_label_set_text(appData->labelStatusResign, "You Lose !");
@@ -124,7 +126,7 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
 
     change_team(BLACK);
 
-    change_game_status(OTURN);
+
     const gchar *port = gtk_entry_get_text(appData->entryPort);
     const gchar *ip = gtk_entry_get_text(appData->entryIP);
 
@@ -180,6 +182,7 @@ G_MODULE_EXPORT void on_btnJoin2_clicked(GtkButton *btn) {
 
     gtk_widget_show((GtkWidget *) appData->wPlay);
     gtk_widget_hide((GtkWidget *) appData->wWait);
+    change_game_status(OTURN);
     end:;
 }
 
@@ -260,6 +263,7 @@ G_MODULE_EXPORT void on_btnCreate_clicked(GtkButton *btn) {
     // socket here
     gtk_widget_show((GtkWidget *) appData->wPlay);
     gtk_widget_hide((GtkWidget *) appData->wWait);
+    reset_timer();
 }
 
 /*
@@ -1177,6 +1181,7 @@ void change_game_status(GameState gameState) {
         case OTURN:
             gtk_label_set_text(appData->labelStatusPlay, "Wait Another Player !!");
             appData->gameState = OTURN;
+            start_timeout();
             break;
         case ATURN:
             gtk_label_set_text(appData->labelStatusPlay, "Choose Location");
@@ -1191,6 +1196,8 @@ void change_game_status(GameState gameState) {
             appData->gameState = YTURN;
             break;
         case ENDGAME:
+            stop_timeout();
+            stop_timer();
             break;
     }
 }
@@ -1257,11 +1264,6 @@ void send_to_player(Mode mode, int x, int y, int i, int j) {
 
     }
 
-    if (mode == MOVE) {
-        appData->id = g_timeout_add(90000, fn_timeout, NULL);
-
-    }
-
 }
 
 void fn_timeout() {
@@ -1270,7 +1272,7 @@ void fn_timeout() {
         send_to_player(TIMEOUT, 0, 0, 0, 0);
         printf("time out 1 \n");
         g_source_remove(appData->id);
-        appData->id = g_timeout_add(30000, fn_timeout, NULL);
+        appData->id = g_timeout_add(32000, fn_timeout, NULL);
     } else {
         gtk_widget_show((GtkWidget *) appData->wWait);
 
@@ -1286,6 +1288,41 @@ void fn_timeout() {
 
 }
 
+void fn_timer(){
+
+
+    int min = appData->timer / 60;
+    int sec = appData->timer % 60;
+    char str[7];
+    (appData->timer)--;
+    sprintf(str, "%d:%d", min, sec);
+
+    printf("%s\n", str);
+
+    gtk_label_set_text(appData->labelTimer, str);
+}
+
+void stop_timeout(){
+    appData->flag = 0;
+    g_source_remove(appData->id);
+    reset_timer();
+}
+
+void start_timeout(){
+    appData->id = g_timeout_add(90000, fn_timeout, NULL);
+    reset_timer();
+}
+
+void reset_timer(){
+    appData->timer = 120;
+    g_source_remove(appData->id_timer);
+    appData->id_timer = g_timeout_add(1000, fn_timer, NULL);
+}
+
+void stop_timer(){
+    appData->timer = 120;
+    g_source_remove(appData->id_timer);
+}
 
 void rev_from_player(int signo) {
     Protocol aProtocol;
@@ -1302,8 +1339,7 @@ void rev_from_player(int signo) {
 
     switch (aProtocol.mode) {
         case MOVE:
-            appData->flag = 0;
-            g_source_remove(appData->id);
+            stop_timeout();
 
             if (appData->squareMap[aProtocol.from.x][aProtocol.from.y]->p != NULL) {
 //                another_player_move(aProtocol.from.x, aProtocol.from.y, aProtocol.to.x, aProtocol.to.y);
@@ -1379,7 +1415,7 @@ void rev_from_player(int signo) {
             break;
         case RESIGN:
 
-
+            change_game_status(ENDGAME);
             gtk_widget_show((GtkWidget *) appData->wResign);
             gtk_widget_hide((GtkWidget *) appData->wPlay);
             gtk_label_set_text(appData->labelStatusResign, "You Win !");
@@ -1389,6 +1425,8 @@ void rev_from_player(int signo) {
 
             break;
         case RESTART:
+
+            change_game_status(ENDGAME);
 
             gtk_widget_show((GtkWidget *) appData->wRestart);
             gtk_label_set_text(appData->labelStatusRestart, "You Win, The game prepare for restarting !");
@@ -1427,9 +1465,11 @@ void rev_from_player(int signo) {
                 case MOVE:
                     change_game_status(OTURN);
 
+
                     break;
                 case RESIGN:
                 case RESTART:
+                    change_game_status(ENDGAME);
 
                     switch (appData->team) {
 
@@ -1471,6 +1511,8 @@ void rev_from_player(int signo) {
         case END:
 
             gtk_widget_show((GtkWidget *) appData->wWait);
+
+            change_game_status(ENDGAME);
 
             gtk_label_set_text(appData->labelStatusWait, "YOU LOSE");
             gtk_main_iteration_do(FALSE);
@@ -1518,6 +1560,7 @@ void check_game_end() {
 
 
         change_game_status(ENDGAME);
+
 
     }
 
