@@ -1272,7 +1272,7 @@ void fn_timeout() {
         send_to_player(TIMEOUT, 0, 0, 0, 0);
         printf("time out 1 \n");
         g_source_remove(appData->id);
-        appData->id = g_timeout_add(32000, fn_timeout, NULL);
+        appData->id = g_timeout_add(17000, (GSourceFunc) fn_timeout, NULL);
     } else {
         gtk_widget_show((GtkWidget *) appData->wWait);
 
@@ -1297,8 +1297,6 @@ void fn_timer(){
     (appData->timer)--;
     sprintf(str, "%d:%d", min, sec);
 
-    printf("%s\n", str);
-
     gtk_label_set_text(appData->labelTimer, str);
 }
 
@@ -1309,18 +1307,18 @@ void stop_timeout(){
 }
 
 void start_timeout(){
-    appData->id = g_timeout_add(90000, fn_timeout, NULL);
+    appData->id = g_timeout_add(15000,(GSourceFunc) fn_timeout, NULL);
     reset_timer();
 }
 
 void reset_timer(){
-    appData->timer = 120;
+    appData->timer = 30;
     g_source_remove(appData->id_timer);
-    appData->id_timer = g_timeout_add(1000, fn_timer, NULL);
+    appData->id_timer = g_timeout_add(1000,(GSourceFunc) fn_timer, NULL);
 }
 
 void stop_timer(){
-    appData->timer = 120;
+    appData->timer = 30;
     g_source_remove(appData->id_timer);
 }
 
